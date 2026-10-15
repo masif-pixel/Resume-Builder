@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ads_text_primary">#1A1A1A</color>
+    <color name="ads_text_secondary">#6B6B6B</color>
+    <color name="ads_card_bg">#FFFFFF</color>
+    <color name="ads_accent">#4F46E5</color>
+    <color name="ads_badge">#9E9E9E</color>
+    <color name="ads_ad_activity_bg">#000000</color>
+    <color name="ads_showing_scrim">#66000000</color>
+    <color name="ads_showing_card">#E6EEEEEE</color>
+</resources>

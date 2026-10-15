@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- API 35+: avoid edge-to-edge so status/nav bars stay solid black on the ad screen. -->
+    <style name="Theme.Ads.AdActivity" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/ads_ad_activity_bg</item>
+        <item name="android:colorBackground">@color/ads_ad_activity_bg</item>
+        <item name="android:statusBarColor">@color/ads_ad_activity_bg</item>
+        <item name="android:navigationBarColor">@color/ads_ad_activity_bg</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>
