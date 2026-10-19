@@ -136,7 +136,7 @@ fun SectionEditorScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = section?.title ?: "",
+                title = section?.let { resume?.style?.language?.headingFor(it) }.orEmpty(),
                 onBack = onBack,
                 actions = {
                     if (section != null && section.type.isListSection) {
@@ -190,7 +190,7 @@ fun SectionEditorScreen(
     }
 
     if (renaming && section != null) {
-        TextInputDialog(title = "Rename section", label = "Section title", initial = section.title, onConfirm = { renaming = false; viewModel.renameSection(it) }, onDismiss = { renaming = false })
+        TextInputDialog(title = "Rename section", label = "Section title", initial = resume?.style?.language?.headingFor(section) ?: section.title, onConfirm = { renaming = false; viewModel.renameSection(it) }, onDismiss = { renaming = false })
     }
     val currentSection = section
     editingItem?.let { item ->

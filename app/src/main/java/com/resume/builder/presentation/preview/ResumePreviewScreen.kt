@@ -250,19 +250,19 @@ private fun CustomizePanel(
                         CustomizeCategory.CONTACT -> ContactOptions(resume.style, viewModel)
                         CustomizeCategory.LANGUAGE -> ScrollColumn {
                             Text(
-                                "Choose the language your resume is written in. Section titles are translated and right-to-left layout is applied for Arabic and Urdu. Your own text isn't translated.",
+                                "Choose the language your resume is written in. Section titles are translated and right-to-left layout is applied for Arabic, Urdu, Persian, Hebrew and Pashto. Your own text isn't translated.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(10.dp))
-                            ResumeLanguage.entries.chunked(3).forEach { row ->
+                            ResumeLanguage.entries.chunked(2).forEach { row ->
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
                                     row.forEach { lang ->
-                                        OptionTile(lang.label, selected = resume.style.language == lang, modifier = Modifier.weight(1f)) {
+                                        OptionTile(lang.nativeName, selected = resume.style.language == lang, modifier = Modifier.weight(1f)) {
                                             viewModel.updateStyle { it.copy(language = lang) }
                                         }
                                     }
-                                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                                    repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                                 }
                             }
                         }

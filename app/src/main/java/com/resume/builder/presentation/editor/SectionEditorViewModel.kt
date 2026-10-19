@@ -8,6 +8,7 @@ import com.resume.builder.data.local.ImageStore
 import com.resume.builder.domain.model.ContactInfo
 import com.resume.builder.domain.model.ImproveKind
 import com.resume.builder.domain.model.Resume
+import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.ResumeSection
 import com.resume.builder.domain.model.SectionItem
 import com.resume.builder.domain.model.SignatureInfo
@@ -78,7 +79,7 @@ class SectionEditorViewModel(
 
     fun updateSignature(transform: (SignatureInfo) -> SignatureInfo) = update { it.copy(content = it.content.copy(signature = transform(it.content.signature))) }
 
-    fun renameSection(title: String) = updateSection { it.copy(title = title.ifBlank { it.type.defaultTitle }) }
+    fun renameSection(title: String) = updateSection { it.copy(title = ResumeLanguage.normalizeTitle(it.type, title)) }
 
     fun upsertItem(item: SectionItem) = updateSection { section ->
         val exists = section.items.any { it.id == item.id }

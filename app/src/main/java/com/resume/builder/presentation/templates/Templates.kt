@@ -68,6 +68,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.TemplateCatalog
 import com.resume.builder.domain.model.TemplateCategory
 import com.resume.builder.domain.model.TemplateSpec
@@ -77,7 +78,7 @@ import com.resume.builder.domain.usecase.DocumentExporter
 import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.ChoiceChips
 import com.resume.builder.presentation.components.GradientButton
-import com.resume.builder.presentation.components.TextInputDialog
+import com.resume.builder.presentation.components.CreateResumeDialog
 import com.resume.builder.presentation.main.MainActions
 import com.resume.builder.ui.theme.Success
 import kotlinx.coroutines.channels.Channel
@@ -127,8 +128,8 @@ class TemplatesViewModel(
         _events.send(TemplateEvent.Applied(spec.name))
     }
 
-    fun create(spec: TemplateSpec, title: String) = viewModelScope.launch {
-        val resume = createResume(title, templateId = spec.id)
+    fun create(spec: TemplateSpec, title: String, language: ResumeLanguage) = viewModelScope.launch {
+        val resume = createResume(title, templateId = spec.id, language = language)
         _events.send(TemplateEvent.Created(resume.id))
     }
 
@@ -163,12 +164,10 @@ fun TemplatesTab(actions: MainActions, onOpenDrawer: () -> Unit, viewModel: Temp
         )
     }
     creating?.let { spec ->
-        TextInputDialog(
-            title = "Name your resume",
+        CreateResumeDialog(
             label = "e.g. Product Designer",
             supporting = "Starting with the ${spec.name} template.",
-            confirmText = "Create",
-            onConfirm = { creating = null; viewModel.create(spec, it) },
+            onConfirm = { title, language -> creating = null; viewModel.create(spec, title, language) },
             onDismiss = { creating = null },
         )
     }
@@ -219,12 +218,10 @@ fun TemplatePickerScreen(
         )
     }
     creating?.let { spec ->
-        TextInputDialog(
-            title = "Name your resume",
+        CreateResumeDialog(
             label = "e.g. Marketing Manager",
             supporting = "Starting with the ${spec.name} template.",
-            confirmText = "Create",
-            onConfirm = { creating = null; viewModel.create(spec, it) },
+            onConfirm = { title, language -> creating = null; viewModel.create(spec, title, language) },
             onDismiss = { creating = null },
         )
     }

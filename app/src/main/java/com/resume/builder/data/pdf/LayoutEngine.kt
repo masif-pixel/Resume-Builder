@@ -937,8 +937,9 @@ internal class LayoutEngine(private val resume: Resume, private val assets: Rend
         if (item.link.isNotBlank() && fields.linkLabel != null && fields != SectionType.REFERENCES.fields) {
             tail += textBlock(item.link.removePrefix("https://"), textPaint(smallSize, accentOn(text)), contentWidth, after = 1.5f)
         }
-        if (item.level > 0 && fields.levelLabels != null) {
-            tail += textBlock(fields.levelLabels.getOrElse(item.level - 1) { "" }, textPaint(smallSize, secondary), contentWidth)
+        val levelLabels = lang.levelLabels(fields)
+        if (item.level > 0 && levelLabels != null) {
+            tail += textBlock(levelLabels.getOrElse(item.level - 1) { "" }, textPaint(smallSize, secondary), contentWidth)
         }
         tail += richText(item.description, contentWidth, if (onSidebar) sidebarText else text)
         blocks += if (timeline) tail.map { offset(it, if (rtl) 0f else gutter, gutter) } else tail
@@ -948,7 +949,7 @@ internal class LayoutEngine(private val resume: Resume, private val assets: Rend
     private fun compactList(section: ResumeSection, width: Float, onSidebar: Boolean): List<Block> {
         val color = if (onSidebar) sidebarText else text
         val paint = textPaint(bodySize, color)
-        val levels = section.type.fields?.levelLabels
+        val levels = lang.levelLabels(section.type.fields)
         val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         return section.items.filter { it.title.isNotBlank() }.map { item ->
             when {
@@ -1000,7 +1001,7 @@ internal class LayoutEngine(private val resume: Resume, private val assets: Rend
     }
 
     private fun inlineList(section: ResumeSection, width: Float): List<Block> {
-        val levels = section.type.fields?.levelLabels
+        val levels = lang.levelLabels(section.type.fields)
         val parts = section.items.filter { it.title.isNotBlank() }.map { item ->
             val level = levels?.getOrNull(item.level - 1)
             if (section.type == SectionType.LANGUAGES && level != null) "${item.title} ($level)" else item.title

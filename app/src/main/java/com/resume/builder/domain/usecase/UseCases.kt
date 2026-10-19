@@ -7,6 +7,8 @@ import com.resume.builder.domain.model.CoverLetter
 import com.resume.builder.domain.model.CoverLetterRequest
 import com.resume.builder.domain.model.Resume
 import com.resume.builder.domain.model.ResumeContent
+import com.resume.builder.domain.model.ResumeLanguage
+import com.resume.builder.domain.model.ResumeStyle
 import com.resume.builder.domain.model.SavedFile
 import com.resume.builder.domain.model.TemplateCatalog
 import com.resume.builder.domain.model.newId
@@ -28,8 +30,14 @@ class CreateResumeUseCase(private val resumes: ResumeRepository) {
         title: String,
         templateId: String = TemplateCatalog.DEFAULT_ID,
         content: ResumeContent = ResumeContent(),
+        language: ResumeLanguage = ResumeLanguage.ENGLISH,
     ): Resume {
-        val resume = Resume(title = title.trim().ifBlank { "My Resume" }, templateId = templateId, content = content)
+        val resume = Resume(
+            title = title.trim().ifBlank { "My Resume" },
+            templateId = templateId,
+            content = content,
+            style = ResumeStyle(language = language),
+        )
         resumes.upsert(resume)
         return resume
     }
@@ -57,7 +65,9 @@ class GenerateAiResumeUseCase(
     private val createResume: CreateResumeUseCase,
 ) {
     suspend operator fun invoke(request: AiResumeRequest): Result<Resume> =
-        ai.generateResume(request).map { (title, content) -> createResume(title, content = content) }
+        ai.generateResume(request).map { (title, content) ->
+            createResume(title, content = content, language = ResumeLanguage.fromLabel(request.language) ?: ResumeLanguage.ENGLISH)
+        }
 }
 
 class ImportResumeUseCase(

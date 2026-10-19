@@ -183,7 +183,7 @@ private val faq = listOf(
     "Is the app free?" to "Yes. Every template, customization option and PDF tool is free to use.",
     "Where are my resumes stored?" to "On your device in a private database. If you sign in, they're also backed up to your cloud account and synced across devices.",
     "Are the templates ATS-friendly?" to "Templates tagged ATS (Clarity, Compact Pro, Ember) use a simple single-column structure that applicant tracking systems read reliably.",
-    "Can I use my own language?" to "Yes. Write your content in any language and pick it under Preview › Language to translate section titles and enable right-to-left layout for Arabic or Urdu.",
+    "Can I use my own language?" to "Yes. Write your content in any language and pick it when creating the resume, from the translate button in the editor, or under Preview › Language. Section titles are translated and right-to-left layout is used for Arabic, Urdu, Persian, Hebrew and Pashto.",
     "How does AI writing work?" to "Your text is sent securely to the AI assistant to draft or polish content. Always review generated text — it never invents employers or dates on purpose, but double-check facts.",
     "Why can't I select text in PDFs from PDF tools?" to "Merge, compress, split and sign re-render pages on your device for privacy, which turns pages into images. Resumes you export from the editor keep selectable text.",
 )

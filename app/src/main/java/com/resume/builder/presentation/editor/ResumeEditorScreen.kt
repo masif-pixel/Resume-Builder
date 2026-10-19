@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.TipsAndUpdates
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.AlertDialog
@@ -69,11 +70,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.resume.builder.domain.model.CustomLayout
 import com.resume.builder.domain.model.Resume
+import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.ResumeSection
 import com.resume.builder.domain.model.SectionType
 import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.ConfirmDialog
 import com.resume.builder.presentation.components.GradientButton
+import com.resume.builder.presentation.components.ResumeLanguageDialog
 import com.resume.builder.presentation.components.TextInputDialog
 import com.resume.builder.ui.theme.Success
 import org.koin.androidx.compose.koinViewModel
@@ -93,6 +96,7 @@ fun ResumeEditorScreen(
     var showManage by remember { mutableStateOf(false) }
     var showCustom by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
+    var choosingLanguage by remember { mutableStateOf(false) }
     var deletingSection by remember { mutableStateOf<ResumeSection?>(null) }
 
     LaunchedEffect(Unit) { viewModel.openSection.collect(onEditSection) }
@@ -101,9 +105,10 @@ fun ResumeEditorScreen(
         topBar = {
             AppTopBar(
                 title = resume?.title ?: "",
-                subtitle = "Tap a section to edit · drag to reorder",
+                subtitle = "Tap to edit · drag to reorder",
                 onBack = onBack,
                 actions = {
+                    IconButton(onClick = { choosingLanguage = true }) { Icon(Icons.Rounded.Translate, "Resume language") }
                     IconButton(onClick = { renaming = true }) { Icon(Icons.Rounded.Edit, "Rename resume") }
                     IconButton(onClick = { showManage = true }) { Icon(Icons.Rounded.Tune, "Show or hide sections") }
                 },
@@ -186,10 +191,17 @@ fun ResumeEditorScreen(
 
     val current = resume
     if (showManage && current != null) {
-        ManageSectionsDialog(current.content.sections, onToggle = viewModel::setVisible, onDismiss = { showManage = false })
+        ManageSectionsDialog(current.content.sections, current.style.language, onToggle = viewModel::setVisible, onDismiss = { showManage = false })
     }
     if (showCustom) {
         CustomSectionDialog(onConfirm = { name, layout -> showCustom = false; viewModel.addCustomSection(name, layout) }, onDismiss = { showCustom = false })
+    }
+    if (choosingLanguage && current != null) {
+        ResumeLanguageDialog(
+            selected = current.style.language,
+            onSelect = { choosingLanguage = false; viewModel.setLanguage(it) },
+            onDismiss = { choosingLanguage = false },
+        )
     }
     if (renaming && current != null) {
         TextInputDialog(title = "Rename resume", label = "Resume name", initial = current.title, onConfirm = { renaming = false; viewModel.rename(it) }, onDismiss = { renaming = false })
@@ -292,7 +304,7 @@ private fun SectionRow(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(section.title, style = MaterialTheme.typography.titleMedium)
+                Text(resume.style.language.headingFor(section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     when {
                         section.type.isListSection && section.items.isNotEmpty() -> "${section.items.size} ${if (section.items.size == 1) "entry" else "entries"}"
@@ -316,7 +328,7 @@ private fun SectionRow(
 }
 
 @Composable
-private fun ManageSectionsDialog(sections: List<ResumeSection>, onToggle: (String, Boolean) -> Unit, onDismiss: () -> Unit) {
+private fun ManageSectionsDialog(sections: List<ResumeSection>, language: ResumeLanguage, onToggle: (String, Boolean) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Manage sections") },
@@ -337,7 +349,7 @@ private fun ManageSectionsDialog(sections: List<ResumeSection>, onToggle: (Strin
                     ) {
                         Icon(section.type.icon(), null, tint = section.type.tint())
                         Spacer(Modifier.width(12.dp))
-                        Text(section.title, modifier = Modifier.weight(1f))
+                        Text(language.headingFor(section), modifier = Modifier.weight(1f))
                         Switch(checked = section.visible, onCheckedChange = { onToggle(section.id, it) })
                     }
                 }

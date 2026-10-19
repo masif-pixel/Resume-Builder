@@ -96,6 +96,7 @@ import com.resume.builder.presentation.components.EmptyState
 import com.resume.builder.presentation.components.FileActions
 import com.resume.builder.presentation.components.LoadingDialog
 import com.resume.builder.presentation.components.ResumeStackIllustration
+import com.resume.builder.presentation.components.CreateResumeDialog
 import com.resume.builder.presentation.components.TextInputDialog
 import com.resume.builder.presentation.components.formatModified
 import com.resume.builder.presentation.components.rememberFileOpener
@@ -236,12 +237,10 @@ fun HomeTab(
     }
 
     if (showCreate) {
-        TextInputDialog(
-            title = "Name your resume",
+        CreateResumeDialog(
             label = "e.g. Android Developer",
             supporting = "Use the role you're targeting — you can rename it anytime.",
-            confirmText = "Create",
-            onConfirm = { showCreate = false; viewModel.create(it) },
+            onConfirm = { title, language -> showCreate = false; viewModel.create(title, language) },
             onDismiss = { showCreate = false },
         )
     }

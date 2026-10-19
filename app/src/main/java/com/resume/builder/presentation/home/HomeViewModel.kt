@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.resume.builder.data.pdf.PdfToolsEngine
 import com.resume.builder.domain.model.Resume
+import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.SavedFile
 import com.resume.builder.domain.repository.ResumeRepository
 import com.resume.builder.domain.usecase.CreateResumeUseCase
@@ -74,8 +75,8 @@ class HomeViewModel(
         }
     }
 
-    fun create(title: String) = viewModelScope.launch {
-        val resume = createResume(title)
+    fun create(title: String, language: ResumeLanguage) = viewModelScope.launch {
+        val resume = createResume(title, language = language)
         _events.send(HomeEvent.OpenEditor(resume.id))
     }
 

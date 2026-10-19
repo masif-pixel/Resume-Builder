@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.resume.builder.domain.model.CustomLayout
 import com.resume.builder.domain.model.Resume
+import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.ResumeSection
 import com.resume.builder.domain.model.SectionType
 import com.resume.builder.domain.repository.ResumeRepository
@@ -64,4 +65,6 @@ class ResumeEditorViewModel(
     fun deleteSection(sectionId: String) = updateSections { sections -> sections.filterNot { it.id == sectionId && it.type == SectionType.CUSTOM } }
 
     fun rename(title: String) = update { it.copy(title = title) }
+
+    fun setLanguage(language: ResumeLanguage) = update { it.copy(style = it.style.copy(language = language)) }
 }
