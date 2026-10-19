@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.R
 import com.resume.builder.data.local.ImageStore
 import com.resume.builder.domain.model.ContactInfo
 import com.resume.builder.domain.model.ImproveKind
@@ -14,6 +15,7 @@ import com.resume.builder.domain.model.SectionItem
 import com.resume.builder.domain.model.SignatureInfo
 import com.resume.builder.domain.repository.AiRepository
 import com.resume.builder.domain.repository.ResumeRepository
+import com.resume.builder.presentation.components.UiText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -39,7 +41,7 @@ class SectionEditorViewModel(
     private val _aiBusy = MutableStateFlow(false)
     val aiBusy: StateFlow<Boolean> = _aiBusy.asStateFlow()
 
-    private val _messages = Channel<String>(Channel.BUFFERED)
+    private val _messages = Channel<UiText>(Channel.BUFFERED)
     val messages = _messages.receiveAsFlow()
 
     private var saveJob: Job? = null
@@ -110,7 +112,7 @@ class SectionEditorViewModel(
                 updateContact { it.copy(photoPath = path) }
                 images.delete(old)
             }
-            .onFailure { _messages.send("Couldn't use that image") }
+            .onFailure { _messages.send(UiText.Res(R.string.error_image)) }
     }
 
     fun removePhoto() {
@@ -143,7 +145,7 @@ class SectionEditorViewModel(
             _aiBusy.value = true
             ai.improveText(text, kind, context)
                 .onSuccess(onResult)
-                .onFailure { _messages.send(it.message ?: "AI request failed") }
+                .onFailure { _messages.send(UiText.Res(R.string.error_ai_failed)) }
             _aiBusy.value = false
         }
     }

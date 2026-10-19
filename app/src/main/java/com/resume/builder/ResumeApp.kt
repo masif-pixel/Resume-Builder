@@ -1,8 +1,10 @@
 package com.resume.builder
 
 import android.app.Application
+import android.content.Context
 import com.pixelforge.ads.AdsSdk
 import com.pixelforge.ads.di.adsModule
+import com.resume.builder.core.locale.AppLocale
 import com.resume.builder.di.appModules
 import com.resume.builder.domain.repository.PreferencesRepository
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +21,10 @@ class ResumeApp : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val adsSdk: AdsSdk by inject()
     private val preferences: PreferencesRepository by inject()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

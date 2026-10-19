@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import com.resume.builder.R
 import com.resume.builder.data.local.db.CoverLetterDao
 import com.resume.builder.data.local.db.ResumeDao
 import com.resume.builder.data.local.db.SavedFileDao
@@ -62,7 +63,7 @@ class SavedFileRepositoryImpl(
     override fun exportDir(): File = File(context.filesDir, "exports").apply { mkdirs() }
 
     override fun publicFolderLabel(): String =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) "Documents › $PUBLIC_FOLDER" else "App storage"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) context.getString(R.string.storage_documents, PUBLIC_FOLDER) else context.getString(R.string.storage_app)
 
     override suspend fun register(source: File, displayName: String, mimeType: String, category: FileCategory): SavedFile =
         withContext(Dispatchers.IO) {

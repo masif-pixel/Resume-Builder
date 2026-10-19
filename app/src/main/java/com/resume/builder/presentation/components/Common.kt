@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -54,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -72,7 +75,6 @@ import com.resume.builder.ui.theme.Gradients
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +99,7 @@ fun AppTopBar(
             when {
                 navigationIcon != null -> navigationIcon()
                 onBack != null -> IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
             }
         },
@@ -223,7 +225,7 @@ fun LoadingDialog(title: String, message: String, onCancel: (() -> Unit)? = null
             }
         },
         confirmButton = {
-            if (onCancel != null) TextButton(onClick = onCancel) { Text("Cancel") }
+            if (onCancel != null) TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
         },
     )
 }
@@ -247,7 +249,7 @@ fun ConfirmDialog(
                 colors = if (destructive) ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error) else ButtonDefaults.textButtonColors(),
             ) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
 
@@ -256,7 +258,7 @@ fun TextInputDialog(
     title: String,
     label: String,
     initial: String = "",
-    confirmText: String = "Save",
+    confirmText: String = stringResource(R.string.common_save),
     supporting: String? = null,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -284,7 +286,7 @@ fun TextInputDialog(
         confirmButton = {
             TextButton(onClick = { onConfirm(value.trim()) }, enabled = value.isNotBlank()) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
 
@@ -300,7 +302,7 @@ fun CreateResumeDialog(
     var language by remember { mutableStateOf(ResumeLanguage.fromDevice()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Name your resume") },
+        title = { Text(stringResource(R.string.create_resume_dialog_title)) },
         text = {
             Column {
                 Text(supporting, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -315,14 +317,14 @@ fun CreateResumeDialog(
                 )
                 Spacer(Modifier.height(12.dp))
                 DropdownField(
-                    label = "Resume language",
+                    label = stringResource(R.string.resume_language_title),
                     options = ResumeLanguage.entries,
                     selected = language,
                     optionLabel = { it.label },
                     onSelect = { language = it },
                 )
                 Text(
-                    "Section titles on your resume will use this language.",
+                    stringResource(R.string.create_resume_language_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, top = 6.dp),
@@ -330,9 +332,9 @@ fun CreateResumeDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(value.trim(), language) }, enabled = value.isNotBlank()) { Text("Create") }
+            TextButton(onClick = { onConfirm(value.trim(), language) }, enabled = value.isNotBlank()) { Text(stringResource(R.string.common_create)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
 
@@ -341,11 +343,11 @@ fun CreateResumeDialog(
 fun ResumeLanguageDialog(selected: ResumeLanguage, onSelect: (ResumeLanguage) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Resume language") },
+        title = { Text(stringResource(R.string.resume_language_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    "Section titles are translated and right-to-left layout is applied where needed. Your own text isn't translated.",
+                    stringResource(R.string.resume_language_message),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -364,7 +366,7 @@ fun ResumeLanguageDialog(selected: ResumeLanguage, onSelect: (ResumeLanguage) ->
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_done)) } },
     )
 }
 
@@ -372,7 +374,7 @@ fun ResumeLanguageDialog(selected: ResumeLanguage, onSelect: (ResumeLanguage) ->
 fun <T> ChoiceChips(
     options: List<T>,
     selected: T?,
-    label: (T) -> String,
+    label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
@@ -500,14 +502,16 @@ fun StatusDot(color: Color, modifier: Modifier = Modifier) {
     Box(modifier.size(8.dp).clip(CircleShape).background(color))
 }
 
+@Composable
 fun formatModified(timestamp: Long): String {
+    val locale = LocalConfiguration.current.locales[0]
     val now = Calendar.getInstance()
     val then = Calendar.getInstance().apply { timeInMillis = timestamp }
-    val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(timestamp))
+    val time = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT, locale).format(Date(timestamp))
     return when {
-        now.get(Calendar.YEAR) == then.get(Calendar.YEAR) && now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) -> "Today, $time"
-        now.get(Calendar.YEAR) == then.get(Calendar.YEAR) && now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> "Yesterday, $time"
-        else -> SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(timestamp))
+        now.get(Calendar.YEAR) == then.get(Calendar.YEAR) && now.get(Calendar.DAY_OF_YEAR) == then.get(Calendar.DAY_OF_YEAR) -> stringResource(R.string.date_today, time)
+        now.get(Calendar.YEAR) == then.get(Calendar.YEAR) && now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR) == 1 -> stringResource(R.string.date_yesterday, time)
+        else -> SimpleDateFormat("d MMM yyyy", locale).format(Date(timestamp))
     }
 }
 

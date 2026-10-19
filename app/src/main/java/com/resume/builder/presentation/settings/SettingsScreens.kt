@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.settings
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material.icons.rounded.QuestionAnswer
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -61,8 +64,11 @@ import androidx.lifecycle.viewModelScope
 import com.resume.builder.BuildConfig
 import com.resume.builder.domain.model.ThemeMode
 import com.resume.builder.domain.repository.PreferencesRepository
+import com.resume.builder.presentation.components.AppLanguageDialog
 import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.FileActions
+import com.resume.builder.presentation.components.currentAppLanguageName
+import com.resume.builder.presentation.components.displayName
 import com.resume.builder.presentation.components.formatModified
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,39 +92,43 @@ fun SettingsScreen(
     val context = LocalContext.current
     val theme by viewModel.themeMode.collectAsStateWithLifecycle()
     var themeDialog by remember { mutableStateOf(false) }
+    var languageDialog by remember { mutableStateOf(false) }
 
-    Scaffold(topBar = { AppTopBar(title = "Settings", onBack = onBack) }) { padding ->
+    Scaffold(topBar = { AppTopBar(title = stringResource(R.string.drawer_settings), onBack = onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Group("Appearance") {
-                SettingRow(Icons.Rounded.Palette, "Theme", value = theme.label, onClick = { themeDialog = true })
+            Group(stringResource(R.string.settings_appearance)) {
+                SettingRow(Icons.Rounded.Palette, stringResource(R.string.settings_theme), value = theme.displayName(), onClick = { themeDialog = true })
+                SettingRow(Icons.Rounded.Translate, stringResource(R.string.app_language), value = currentAppLanguageName(), onClick = { languageDialog = true })
             }
-            Group("AI assistant") {
+            Group(stringResource(R.string.settings_ai)) {
                 SettingRow(
                     Icons.Rounded.AutoAwesome,
-                    "Status",
-                    value = "On-device",
-                    subtitle = "Drafts resumes & cover letters offline, no internet needed",
+                    stringResource(R.string.settings_status),
+                    value = stringResource(R.string.settings_on_device),
+                    subtitle = stringResource(R.string.settings_ai_desc),
                 )
             }
-            Group("Legal") {
-                SettingRow(Icons.Rounded.Policy, "Privacy policy", onClick = { onLegal("privacy") })
-                SettingRow(Icons.Rounded.Description, "Terms of service", onClick = { onLegal("terms") })
+            Group(stringResource(R.string.settings_legal)) {
+                SettingRow(Icons.Rounded.Policy, stringResource(R.string.legal_privacy_policy), onClick = { onLegal("privacy") })
+                SettingRow(Icons.Rounded.Description, stringResource(R.string.legal_terms_of_service), onClick = { onLegal("terms") })
             }
-            Group("Support") {
-                SettingRow(Icons.Rounded.QuestionAnswer, "FAQ", onClick = { onLegal("faq") })
-                SettingRow(Icons.Rounded.Feedback, "Send feedback", onClick = { FileActions.sendFeedback(context, BuildConfig.VERSION_NAME) })
-                SettingRow(Icons.Rounded.Star, "Rate the app", onClick = { FileActions.rateApp(context) })
+            Group(stringResource(R.string.settings_support)) {
+                SettingRow(Icons.Rounded.QuestionAnswer, stringResource(R.string.settings_faq), onClick = { onLegal("faq") })
+                SettingRow(Icons.Rounded.Feedback, stringResource(R.string.drawer_feedback), onClick = { FileActions.sendFeedback(context, BuildConfig.VERSION_NAME) })
+                SettingRow(Icons.Rounded.Star, stringResource(R.string.settings_rate), onClick = { FileActions.rateApp(context) })
             }
-            Group("About") {
-                SettingRow(Icons.Rounded.Info, "Version", value = BuildConfig.VERSION_NAME)
+            Group(stringResource(R.string.settings_about)) {
+                SettingRow(Icons.Rounded.Info, stringResource(R.string.settings_version), value = BuildConfig.VERSION_NAME)
             }
         }
     }
 
+    if (languageDialog) AppLanguageDialog(onDismiss = { languageDialog = false })
+
     if (themeDialog) {
         AlertDialog(
             onDismissRequest = { themeDialog = false },
-            title = { Text("Choose theme") },
+            title = { Text(stringResource(R.string.settings_choose_theme)) },
             text = {
                 Column {
                     ThemeMode.entries.forEach { mode ->
@@ -135,13 +145,13 @@ fun SettingsScreen(
                         ) {
                             Icon(icon, null)
                             Spacer(Modifier.width(14.dp))
-                            Text(mode.label, modifier = Modifier.weight(1f))
+                            Text(mode.displayName(), modifier = Modifier.weight(1f))
                             RadioButton(selected = theme == mode, onClick = null)
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { themeDialog = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { themeDialog = false }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }
@@ -179,53 +189,53 @@ private fun SettingRow(
     }
 }
 
-private val faq = listOf(
-    "Is the app free?" to "Yes. Every template, customization option and PDF tool is free to use.",
-    "Where are my resumes stored?" to "On your device in a private database. If you sign in, they're also backed up to your cloud account and synced across devices.",
-    "Are the templates ATS-friendly?" to "Templates tagged ATS (Clarity, Compact Pro, Ember) use a simple single-column structure that applicant tracking systems read reliably.",
-    "Can I use my own language?" to "Yes. Write your content in any language and pick it when creating the resume, from the translate button in the editor, or under Preview › Language. Section titles are translated and right-to-left layout is used for Arabic, Urdu, Persian, Hebrew and Pashto.",
-    "How does AI writing work?" to "Your text is sent securely to the AI assistant to draft or polish content. Always review generated text — it never invents employers or dates on purpose, but double-check facts.",
-    "Why can't I select text in PDFs from PDF tools?" to "Merge, compress, split and sign re-render pages on your device for privacy, which turns pages into images. Resumes you export from the editor keep selectable text.",
+private val faq: List<Pair<Int, Int>> = listOf(
+    R.string.faq_free_q to R.string.faq_free_a,
+    R.string.faq_storage_q to R.string.faq_storage_a,
+    R.string.faq_ats_q to R.string.faq_ats_a,
+    R.string.faq_language_q to R.string.faq_language_a,
+    R.string.faq_ai_q to R.string.faq_ai_a,
+    R.string.faq_pdf_q to R.string.faq_pdf_a,
 )
 
 @Composable
 fun LegalScreen(type: String, onBack: () -> Unit) {
     val title = when (type) {
-        "privacy" -> "Privacy policy"
-        "terms" -> "Terms of service"
-        else -> "FAQ"
+        "privacy" -> stringResource(R.string.legal_privacy_policy)
+        "terms" -> stringResource(R.string.legal_terms_of_service)
+        else -> stringResource(R.string.settings_faq)
     }
     Scaffold(topBar = { AppTopBar(title = title, onBack = onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp)) {
             when (type) {
                 "privacy" -> LegalBody(
                     listOf(
-                        "What we store" to "Resumes, cover letters, photos and signatures you create are stored locally on your device. Files you export are saved to your device storage.",
-                        "AI features" to "AI drafting, resume import and cover letter generation run entirely on your device. Nothing you write is sent to a server.",
-                        "Onboarding" to "During onboarding you may tell us how you found the app. This answer is stored only on your device.",
-                        "Your control" to "Delete any document at any time. Uninstalling the app removes all of your data.",
+                        R.string.privacy_store_h to R.string.privacy_store_b,
+                        R.string.privacy_ai_h to R.string.privacy_ai_b,
+                        R.string.privacy_onboarding_h to R.string.privacy_onboarding_b,
+                        R.string.privacy_control_h to R.string.privacy_control_b,
                     ),
                 )
                 "terms" -> LegalBody(
                     listOf(
-                        "Using the app" to "You may use Resume Builder to create documents for personal and professional use. You're responsible for the accuracy of the information you include.",
-                        "AI-generated content" to "AI suggestions are provided as-is. Review and edit generated content before sharing it with employers.",
-                        "Your content" to "You own everything you create. We don't claim rights to your resumes or cover letters.",
-                        "Availability" to "Features may change over time. We aim to keep your locally stored documents accessible at all times.",
+                        R.string.terms_use_h to R.string.terms_use_b,
+                        R.string.terms_ai_h to R.string.terms_ai_b,
+                        R.string.terms_content_h to R.string.terms_content_b,
+                        R.string.terms_availability_h to R.string.terms_availability_b,
                     ),
                 )
-                else -> faq.forEach { (q, a) -> FaqItem(q, a) }
+                else -> faq.forEach { (q, a) -> FaqItem(stringResource(q), stringResource(a)) }
             }
         }
     }
 }
 
 @Composable
-private fun LegalBody(sections: List<Pair<String, String>>) {
+private fun LegalBody(sections: List<Pair<Int, Int>>) {
     sections.forEach { (heading, body) ->
-        Text(heading, style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(heading), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(6.dp))
-        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(18.dp))
     }
 }

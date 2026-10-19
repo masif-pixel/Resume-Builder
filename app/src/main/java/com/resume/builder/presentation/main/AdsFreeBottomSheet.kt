@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.main
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,9 +69,10 @@ private enum class AdsFreeSheetPhase {
 }
 
 /** "2 hours 5 minutes left", rounded up to the next minute so it never reads "0 minutes". */
+@Composable
 fun adFreeRemainingLabel(remainMs: Long): String {
     val totalMinutes = ((remainMs + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
-    return "${totalMinutes / 60} hours ${totalMinutes % 60} minutes left"
+    return stringResource(R.string.ad_free_time_left, totalMinutes / 60, totalMinutes % 60)
 }
 
 /**
@@ -90,6 +93,7 @@ fun AdsFreeBottomSheet(
     val host = remember(context) { context.findActivity() }
     var phase by remember { mutableStateOf(AdsFreeSheetPhase.Ready) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val unableToShowAd = stringResource(R.string.ad_free_unable_to_show)
     val canDismiss = phase != AdsFreeSheetPhase.Loading
     val adFreeUntil by preferences.adFreeUntilEpochMs.collectAsStateWithLifecycle()
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -132,7 +136,7 @@ fun AdsFreeBottomSheet(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Close",
+                    contentDescription = stringResource(R.string.common_close),
                     tint = if (canDismiss) colors.onSurfaceVariant else colors.onSurfaceVariant.copy(alpha = 0.4f)
                 )
             }
@@ -141,7 +145,7 @@ fun AdsFreeBottomSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Go Ads-Free",
+            text = stringResource(R.string.ad_free_title),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = colors.onSurface,
@@ -150,7 +154,7 @@ fun AdsFreeBottomSheet(
         )
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = "Watch one short video and enjoy Resume Builder without ads for 2 hours.",
+            text = stringResource(R.string.ad_free_message),
             fontSize = 14.sp,
             lineHeight = 21.sp,
             color = colors.onSurfaceVariant,
@@ -166,9 +170,9 @@ fun AdsFreeBottomSheet(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            AdsFreeBenefitRow("No interstitial ads")
-            AdsFreeBenefitRow("Build resumes without interruptions")
-            AdsFreeBenefitRow("Free for 2 hours")
+            AdsFreeBenefitRow(stringResource(R.string.ad_free_benefit_no_ads))
+            AdsFreeBenefitRow(stringResource(R.string.ad_free_benefit_no_interruptions))
+            AdsFreeBenefitRow(stringResource(R.string.ad_free_benefit_free))
         }
 
         Spacer(modifier = Modifier.height(28.dp))
@@ -191,7 +195,7 @@ fun AdsFreeBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = "Loading your reward…",
+                        text = stringResource(R.string.ad_free_loading),
                         fontSize = 13.sp,
                         color = colors.onSurfaceVariant
                     )
@@ -219,7 +223,7 @@ fun AdsFreeBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Close",
+                            text = stringResource(R.string.common_close),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = colors.onSurfaceVariant
@@ -246,7 +250,7 @@ fun AdsFreeBottomSheet(
                             .clickable {
                                 val act = host
                                 if (act == null) {
-                                    errorMessage = "Unable to show ad"
+                                    errorMessage = unableToShowAd
                                     return@clickable
                                 }
                                 phase = AdsFreeSheetPhase.Loading
@@ -290,7 +294,7 @@ fun AdsFreeBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Watch & remove ads",
+                            text = stringResource(R.string.ad_free_watch),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colors.onPrimary
@@ -307,7 +311,7 @@ fun AdsFreeBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Not now",
+                            text = stringResource(R.string.common_not_now),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = colors.onSurface

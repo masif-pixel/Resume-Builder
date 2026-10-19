@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -81,7 +83,7 @@ fun SignaturePad(state: SignatureState, modifier: Modifier = Modifier, ink: Colo
         contentAlignment = Alignment.Center,
     ) {
         if (state.isEmpty) {
-            Text("Sign here", color = Color(0xFFB8BCCB), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.signature_sign_here), color = Color(0xFFB8BCCB), style = MaterialTheme.typography.headlineSmall)
         }
         Canvas(
             Modifier.matchParentSize().pointerInput(Unit) {

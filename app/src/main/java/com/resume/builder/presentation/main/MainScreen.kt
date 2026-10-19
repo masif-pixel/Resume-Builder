@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.main
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FolderOpen
@@ -76,6 +79,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.annotation.StringRes
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -95,7 +99,9 @@ import com.resume.builder.BuildConfig
 import com.resume.builder.core.update.ForceUpdateGate
 import com.resume.builder.core.update.PlayForceUpdate
 import com.resume.builder.domain.repository.PreferencesRepository
+import com.resume.builder.presentation.components.AppLanguageDialog
 import com.resume.builder.presentation.components.BrandLogo
+import com.resume.builder.presentation.components.currentAppLanguageName
 import com.resume.builder.presentation.components.FileActions
 import com.resume.builder.presentation.coverletter.CoverLettersTab
 import com.resume.builder.presentation.home.HomeTab
@@ -130,13 +136,13 @@ data class MainActions(
     val openSettings: () -> Unit,
 )
 
-private data class TabItem(val label: String, val selected: ImageVector, val unselected: ImageVector)
+private data class TabItem(@StringRes val label: Int, val selected: ImageVector, val unselected: ImageVector)
 
 private val tabs = listOf(
-    TabItem("Resumes", Icons.Rounded.Description, Icons.Outlined.Description),
-    TabItem("Cover Letters", Icons.Rounded.Mail, Icons.Outlined.Mail),
-    TabItem("Templates", Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
-    TabItem("Saved", Icons.Rounded.FolderOpen, Icons.Outlined.FolderOpen),
+    TabItem(R.string.tab_resumes, Icons.Rounded.Description, Icons.Outlined.Description),
+    TabItem(R.string.tab_cover_letters, Icons.Rounded.Mail, Icons.Outlined.Mail),
+    TabItem(R.string.tab_templates, Icons.Rounded.Dashboard, Icons.Outlined.Dashboard),
+    TabItem(R.string.tab_saved, Icons.Rounded.FolderOpen, Icons.Outlined.FolderOpen),
 )
 
 @Composable
@@ -328,8 +334,8 @@ fun MainScreen(
                                     tab = index
                                 }
                             },
-                            icon = { Icon(if (tab == index) item.selected else item.unselected, contentDescription = item.label) },
-                            label = { Text(item.label, maxLines = 1, style = MaterialTheme.typography.labelMedium) },
+                            icon = { Icon(if (tab == index) item.selected else item.unselected, contentDescription = stringResource(item.label)) },
+                            label = { Text(stringResource(item.label), maxLines = 1, style = MaterialTheme.typography.labelMedium) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -387,6 +393,8 @@ private fun AppDrawer(
     onOpenAdFree: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    var showLanguage by remember { mutableStateOf(false) }
+    if (showLanguage) AppLanguageDialog(onDismiss = { showLanguage = false })
     val context = LocalContext.current
     fun closeThen(block: () -> Unit) {
         scope.launch { drawerState.close() }
@@ -405,18 +413,19 @@ private fun AppDrawer(
     ModalDrawerSheet(modifier = Modifier.fillMaxWidth(), drawerContainerColor = MaterialTheme.colorScheme.surface) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             AppHeader()
-            DrawerItem("PDF tools", Icons.Rounded.PictureAsPdf) { closeThen(actions.openPdfTools) }
-            DrawerItem("AI resume", Icons.Rounded.AutoAwesome) { closeThen(actions.openAiResume) }
-            DrawerItem("Settings", Icons.Rounded.Settings) { closeThen(actions.openSettings) }
+            DrawerItem(stringResource(R.string.drawer_pdf_tools), Icons.Rounded.PictureAsPdf) { closeThen(actions.openPdfTools) }
+            DrawerItem(stringResource(R.string.drawer_ai_resume), Icons.Rounded.AutoAwesome) { closeThen(actions.openAiResume) }
+            DrawerItem(stringResource(R.string.drawer_settings), Icons.Rounded.Settings) { closeThen(actions.openSettings) }
+            DrawerItem(stringResource(R.string.app_language), Icons.Rounded.Translate, badge = currentAppLanguageName()) { showLanguage = true }
             if (showAdFreeEntry) {
                 val adFreeActive = adFreeUntil > nowMs
                 NavigationDrawerItem(
                     label = {
                         Column {
-                            Text("Ads free")
+                            Text(stringResource(R.string.drawer_ads_free))
                             Text(
                                 if (adFreeActive) adFreeRemainingLabel(adFreeUntil - nowMs)
-                                else "Watch a rewarded ad to make the app ad free for 2 hours",
+                                else stringResource(R.string.drawer_ads_free_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (adFreeActive) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -430,14 +439,14 @@ private fun AppDrawer(
                 )
             }
             HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-            DrawerItem("Rate us", Icons.Rounded.Star) { closeThen { FileActions.rateApp(context) } }
-            DrawerItem("Send feedback", Icons.Rounded.Feedback) { closeThen { FileActions.sendFeedback(context, BuildConfig.VERSION_NAME) } }
-            DrawerItem("Share app", Icons.Rounded.Share) { closeThen { FileActions.shareApp(context) } }
+            DrawerItem(stringResource(R.string.drawer_rate), Icons.Rounded.Star) { closeThen { FileActions.rateApp(context) } }
+            DrawerItem(stringResource(R.string.drawer_feedback), Icons.Rounded.Feedback) { closeThen { FileActions.sendFeedback(context, BuildConfig.VERSION_NAME) } }
+            DrawerItem(stringResource(R.string.drawer_share), Icons.Rounded.Share) { closeThen { FileActions.shareApp(context) } }
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 BrandLogo(size = 22.dp)
                 Spacer(Modifier.width(8.dp))
-                Text("Resume Builder · v${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.drawer_version, stringResource(R.string.app_name), BuildConfig.VERSION_NAME), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -454,8 +463,8 @@ private fun AppHeader() {
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text("Resume Builder", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Create, edit & export resumes", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.app_name), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.drawer_tagline), color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(6.dp))
                 Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.2f)) {
                     Text(

@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.ai
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -52,6 +55,7 @@ import com.resume.builder.domain.usecase.GenerateAiResumeUseCase
 import com.resume.builder.presentation.components.AiOrb
 import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.DropdownField
+import com.resume.builder.presentation.components.UiText
 import com.resume.builder.presentation.components.FormCard
 import com.resume.builder.presentation.components.GradientButton
 import com.resume.builder.presentation.components.LoadingDialog
@@ -66,7 +70,7 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AiResumeEvent {
     data class Created(val resumeId: String) : AiResumeEvent
-    data class Error(val message: String) : AiResumeEvent
+    data class Error(val message: UiText) : AiResumeEvent
 }
 
 class AiResumeViewModel(
@@ -86,7 +90,7 @@ class AiResumeViewModel(
             _generating.value = true
             generate(AiResumeRequest(background = background, targetJob = targetJob, language = language))
                 .onSuccess { _events.send(AiResumeEvent.Created(it.id)) }
-                .onFailure { _events.send(AiResumeEvent.Error(it.message ?: "Couldn't generate the resume")) }
+                .onFailure { _events.send(AiResumeEvent.Error(UiText.Res(R.string.ai_error_generate))) }
             _generating.value = false
         }
     }
@@ -114,27 +118,28 @@ fun AiResumeScreen(
 ) {
     val generating by viewModel.generating.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-    var language by rememberSaveable { mutableStateOf(ResumeLanguage.ENGLISH.label) }
+    var language by rememberSaveable { mutableStateOf(ResumeLanguage.fromDevice().label) }
     var background by rememberSaveable { mutableStateOf("") }
     var target by rememberSaveable { mutableStateOf("") }
     var showTips by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is AiResumeEvent.Created -> onCreated(event.resumeId)
-                is AiResumeEvent.Error -> snackbar.showSnackbar(event.message)
+                is AiResumeEvent.Error -> snackbar.showSnackbar(event.message.resolve(context))
             }
         }
     }
 
     Scaffold(
-        topBar = { AppTopBar(title = "AI resume", subtitle = "Describe yourself — we'll structure the rest", onBack = onBack) },
+        topBar = { AppTopBar(title = stringResource(R.string.drawer_ai_resume), subtitle = stringResource(R.string.ai_subtitle), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 GradientButton(
-                    text = "Generate resume",
+                    text = stringResource(R.string.ai_generate),
                     icon = Icons.Rounded.AutoAwesome,
                     enabled = background.trim().length >= MIN_BACKGROUND,
                     onClick = { viewModel.generate(background, target, language) },
@@ -147,29 +152,29 @@ fun AiResumeScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            FormCard(title = "Resume language") {
-                DropdownField(label = "Language", options = ResumeLanguage.entries.map { it.label }, selected = language, optionLabel = { it }, onSelect = { language = it })
+            FormCard(title = stringResource(R.string.resume_language_title)) {
+                DropdownField(label = stringResource(R.string.field_language), options = ResumeLanguage.entries.map { it.label }, selected = language, optionLabel = { it }, onSelect = { language = it })
             }
-            FormCard(title = "Your background", subtitle = "Experience, education, skills and achievements — plain sentences are fine") {
+            FormCard(title = stringResource(R.string.ai_background_title), subtitle = stringResource(R.string.ai_background_subtitle)) {
                 OutlinedTextField(
                     value = background,
                     onValueChange = { if (it.length <= MAX_TEXT) background = it },
-                    placeholder = { Text("Write about your experience, education, skills and work history…") },
+                    placeholder = { Text(stringResource(R.string.ai_background_placeholder)) },
                     minLines = 9,
                     shape = RoundedCornerShape(16.dp),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     supportingText = {
-                        Text(if (background.trim().length < MIN_BACKGROUND) "At least $MIN_BACKGROUND characters · ${background.length}/$MAX_TEXT" else "${background.length}/$MAX_TEXT")
+                        Text(if (background.trim().length < MIN_BACKGROUND) stringResource(R.string.ai_min_chars, MIN_BACKGROUND, background.length, MAX_TEXT) else stringResource(R.string.char_count, background.length, MAX_TEXT))
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedButton(onClick = { showTips = !showTips }) {
-                        Text("Tips")
+                        Text(stringResource(R.string.ai_tips))
                         Icon(if (showTips) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
                     }
                     Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { background = EXAMPLE_BACKGROUND }) { Text("Try an example") }
+                    TextButton(onClick = { background = EXAMPLE_BACKGROUND }) { Text(stringResource(R.string.ai_try_example)) }
                 }
                 AnimatedVisibility(showTips) {
                     Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(top = 10.dp)) {
@@ -177,27 +182,27 @@ fun AiResumeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Lightbulb, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("When writing about yourself, include:", style = MaterialTheme.typography.titleSmall)
+                                Text(stringResource(R.string.ai_tips_title), style = MaterialTheme.typography.titleSmall)
                             }
                             listOf(
-                                "Your name and where you live",
-                                "Jobs you've had, dates and what you achieved",
-                                "Education — school, college, certificates",
-                                "Skills and tools you're good at",
-                                "Languages, awards or projects (optional)",
-                            ).forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
+                                stringResource(R.string.ai_tip_1),
+                                stringResource(R.string.ai_tip_2),
+                                stringResource(R.string.ai_tip_3),
+                                stringResource(R.string.ai_tip_4),
+                                stringResource(R.string.ai_tip_5),
+                            ).forEach { Text(stringResource(R.string.bullet_item, it), style = MaterialTheme.typography.bodyMedium) }
                         }
                     }
                 }
             }
-            FormCard(title = "Target job", subtitle = "Optional — paste a job posting to tailor keywords") {
+            FormCard(title = stringResource(R.string.ai_target_title), subtitle = stringResource(R.string.ai_target_subtitle)) {
                 OutlinedTextField(
                     value = target,
                     onValueChange = { if (it.length <= MAX_TEXT) target = it },
-                    placeholder = { Text("Paste the job posting or describe the role you want") },
+                    placeholder = { Text(stringResource(R.string.ai_target_placeholder)) },
                     minLines = 5,
                     shape = RoundedCornerShape(16.dp),
-                    supportingText = { Text("${target.length}/$MAX_TEXT") },
+                    supportingText = { Text(stringResource(R.string.char_count, target.length, MAX_TEXT)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -206,6 +211,6 @@ fun AiResumeScreen(
     }
 
     if (generating) {
-        LoadingDialog(title = "Building your resume", message = "Structuring sections and polishing wording…", onCancel = viewModel::cancel, visual = { AiOrb(size = 130.dp) })
+        LoadingDialog(title = stringResource(R.string.ai_loading_title), message = stringResource(R.string.ai_loading_message), onCancel = viewModel::cancel, visual = { AiOrb(size = 130.dp) })
     }
 }

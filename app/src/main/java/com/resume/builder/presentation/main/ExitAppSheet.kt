@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.main
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,14 +76,14 @@ fun ExitAppSheet(onStay: () -> Unit, onExit: () -> Unit) {
             }
             Spacer(Modifier.height(18.dp))
             Text(
-                "Leaving so soon?",
+                stringResource(R.string.exit_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Your resumes and cover letters stay on this device, so you can pick up right where you left off.",
+                stringResource(R.string.exit_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -91,7 +93,7 @@ fun ExitAppSheet(onStay: () -> Unit, onExit: () -> Unit) {
                 Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.CheckCircle, null, tint = Success, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text("All changes are saved automatically", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.exit_autosave), style = MaterialTheme.typography.labelLarge)
                 }
             }
             Spacer(Modifier.height(22.dp))
@@ -103,21 +105,21 @@ fun ExitAppSheet(onStay: () -> Unit, onExit: () -> Unit) {
                 ) {
                     Icon(Icons.AutoMirrored.Rounded.ExitToApp, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Exit")
+                    Text(stringResource(R.string.exit_exit))
                 }
                 Button(
                     onClick = { dismissThen(onStay) },
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.weight(1f).height(52.dp),
                 ) {
-                    Text("Stay")
+                    Text(stringResource(R.string.exit_stay))
                 }
             }
             Spacer(Modifier.height(6.dp))
             TextButton(onClick = { FileActions.rateApp(context) }) {
                 Icon(Icons.Rounded.Star, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Enjoying the app? Rate us")
+                Text(stringResource(R.string.exit_rate))
             }
         }
     }

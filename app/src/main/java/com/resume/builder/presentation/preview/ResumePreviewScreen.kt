@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.preview
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.graphics.Typeface
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -70,7 +72,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.annotation.StringRes
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -92,6 +96,7 @@ import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.ChoiceChips
 import com.resume.builder.presentation.components.ColorPickerDialog
 import com.resume.builder.presentation.components.ExportedDialog
+import com.resume.builder.presentation.components.displayName
 import com.resume.builder.presentation.components.LabeledSlider
 import com.resume.builder.presentation.components.PagesPreview
 import com.resume.builder.presentation.components.SwatchRow
@@ -116,11 +121,12 @@ fun ResumePreviewScreen(
     var category by rememberSaveable { mutableStateOf(CustomizeCategory.TEMPLATE) }
     var panelExpanded by rememberSaveable { mutableStateOf(true) }
 
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is PreviewEvent.Exported -> exported = event.file
-                is PreviewEvent.Error -> snackbar.showSnackbar(event.message)
+                is PreviewEvent.Error -> snackbar.showSnackbar(event.message.resolve(context))
             }
         }
     }
@@ -128,16 +134,16 @@ fun ResumePreviewScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Preview",
+                title = stringResource(R.string.common_preview),
                 subtitle = resume?.let { TemplateCatalog.byId(it.templateId).name },
                 onBack = onBack,
                 actions = {
-                    IconButton(onClick = viewModel::undo, enabled = canUndo) { Icon(Icons.AutoMirrored.Rounded.Undo, "Undo") }
-                    IconButton(onClick = onEditContent) { Icon(Icons.Rounded.EditNote, "Edit content") }
+                    IconButton(onClick = viewModel::undo, enabled = canUndo) { Icon(Icons.AutoMirrored.Rounded.Undo, stringResource(R.string.common_undo)) }
+                    IconButton(onClick = onEditContent) { Icon(Icons.Rounded.EditNote, stringResource(R.string.edit_content)) }
                     Button(onClick = viewModel::export, enabled = !exporting && resume != null, contentPadding = PaddingValues(horizontal = 14.dp), modifier = Modifier.padding(end = 8.dp)) {
                         if (exporting) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White) else Icon(Icons.Rounded.Download, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Save PDF")
+                        Text(stringResource(R.string.save_pdf))
                     }
                 },
             )
@@ -169,7 +175,7 @@ fun ResumePreviewScreen(
     }
 
     exported?.let { file ->
-        ExportedDialog(file = file, onDismiss = { exported = null }, onViewSaved = { exported = null; onOpenSaved() }, message = "Your resume PDF is ready to send.")
+        ExportedDialog(file = file, onDismiss = { exported = null }, onViewSaved = { exported = null; onOpenSaved() }, message = stringResource(R.string.preview_ready))
     }
 }
 
@@ -202,22 +208,22 @@ private fun CustomizePanel(
     ) {
         Column(Modifier.navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Customize", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.customize), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 if (category != CustomizeCategory.TEMPLATE) {
                     TextButton(onClick = { viewModel.reset(category) }) {
                         Icon(Icons.Rounded.RestartAlt, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Reset")
+                        Text(stringResource(R.string.common_reset))
                     }
                 }
-                IconButton(onClick = onToggleExpanded) { Icon(if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess, if (expanded) "Collapse" else "Expand") }
+                IconButton(onClick = onToggleExpanded) { Icon(if (expanded) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess, if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand)) }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CustomizeCategory.entries.forEach { item ->
                     FilterChip(
                         selected = item == category && expanded,
                         onClick = { onCategory(item) },
-                        label = { Text(item.label) },
+                        label = { Text(stringResource(item.label)) },
                         leadingIcon = { Icon(item.icon(), null, Modifier.size(18.dp)) },
                         shape = RoundedCornerShape(50),
                     )
@@ -231,26 +237,26 @@ private fun CustomizePanel(
                         CustomizeCategory.FONT -> FontOptions(resume.style, viewModel)
                         CustomizeCategory.SIZE -> ScrollColumn {
                             val s = resume.style
-                            LabeledSlider("Name", s.nameSize, { v -> viewModel.updateStyle { it.copy(nameSize = v) } }, -8f..12f, steps = 19)
-                            LabeledSlider("Job title", s.jobTitleSize, { v -> viewModel.updateStyle { it.copy(jobTitleSize = v) } }, -4f..8f, steps = 11)
-                            LabeledSlider("Section titles", s.headingSize, { v -> viewModel.updateStyle { it.copy(headingSize = v) } }, -3f..6f, steps = 17, valueLabel = ::signed1)
-                            LabeledSlider("Body text", s.bodySize, { v -> viewModel.updateStyle { it.copy(bodySize = v) } }, -2f..4f, steps = 11, valueLabel = ::signed1)
+                            LabeledSlider(stringResource(R.string.size_name), s.nameSize, { v -> viewModel.updateStyle { it.copy(nameSize = v) } }, -8f..12f, steps = 19)
+                            LabeledSlider(stringResource(R.string.size_job_title), s.jobTitleSize, { v -> viewModel.updateStyle { it.copy(jobTitleSize = v) } }, -4f..8f, steps = 11)
+                            LabeledSlider(stringResource(R.string.size_section_titles), s.headingSize, { v -> viewModel.updateStyle { it.copy(headingSize = v) } }, -3f..6f, steps = 17, valueLabel = ::signed1)
+                            LabeledSlider(stringResource(R.string.size_body_text), s.bodySize, { v -> viewModel.updateStyle { it.copy(bodySize = v) } }, -2f..4f, steps = 11, valueLabel = ::signed1)
                         }
                         CustomizeCategory.SPACING -> ScrollColumn {
                             val s = resume.style
-                            LabeledSlider("Side margins", s.marginHorizontal, { v -> viewModel.updateStyle { it.copy(marginHorizontal = v) } }, -20f..40f)
-                            LabeledSlider("Top & bottom margins", s.marginVertical, { v -> viewModel.updateStyle { it.copy(marginVertical = v) } }, -20f..40f)
-                            LabeledSlider("Space between sections", s.sectionSpacing, { v -> viewModel.updateStyle { it.copy(sectionSpacing = v) } }, -8f..24f)
-                            LabeledSlider("Space under titles", s.headingSpacing, { v -> viewModel.updateStyle { it.copy(headingSpacing = v) } }, -5f..14f)
-                            LabeledSlider("Line spacing", s.lineSpacing, { v -> viewModel.updateStyle { it.copy(lineSpacing = v) } }, 0f..0.8f, valueLabel = { "×%.2f".format(1.12f + it) })
-                            LabeledSlider("Letter spacing", s.letterSpacing, { v -> viewModel.updateStyle { it.copy(letterSpacing = v) } }, -0.03f..0.12f, valueLabel = { "%.2f".format(it) })
+                            LabeledSlider(stringResource(R.string.spacing_side_margins), s.marginHorizontal, { v -> viewModel.updateStyle { it.copy(marginHorizontal = v) } }, -20f..40f)
+                            LabeledSlider(stringResource(R.string.spacing_vertical_margins), s.marginVertical, { v -> viewModel.updateStyle { it.copy(marginVertical = v) } }, -20f..40f)
+                            LabeledSlider(stringResource(R.string.spacing_sections), s.sectionSpacing, { v -> viewModel.updateStyle { it.copy(sectionSpacing = v) } }, -8f..24f)
+                            LabeledSlider(stringResource(R.string.spacing_under_titles), s.headingSpacing, { v -> viewModel.updateStyle { it.copy(headingSpacing = v) } }, -5f..14f)
+                            LabeledSlider(stringResource(R.string.spacing_line), s.lineSpacing, { v -> viewModel.updateStyle { it.copy(lineSpacing = v) } }, 0f..0.8f, valueLabel = { "×%.2f".format(1.12f + it) })
+                            LabeledSlider(stringResource(R.string.spacing_letter), s.letterSpacing, { v -> viewModel.updateStyle { it.copy(letterSpacing = v) } }, -0.03f..0.12f, valueLabel = { "%.2f".format(it) })
                         }
                         CustomizeCategory.LAYOUT -> LayoutOptions(resume, viewModel)
                         CustomizeCategory.PHOTO -> PhotoOptions(resume, viewModel)
                         CustomizeCategory.CONTACT -> ContactOptions(resume.style, viewModel)
                         CustomizeCategory.LANGUAGE -> ScrollColumn {
                             Text(
-                                "Choose the language your resume is written in. Section titles are translated and right-to-left layout is applied for Arabic, Urdu, Persian, Hebrew and Pashto. Your own text isn't translated.",
+                                stringResource(R.string.preview_language_note),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -317,9 +323,9 @@ private fun TemplateOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
     }
 }
 
-private enum class ColorTarget(val label: String) {
-    ACCENT("Accent"), SIDEBAR("Sidebar"), BACKGROUND("Background"), NAME("Name"), JOB_TITLE("Job title"),
-    HEADINGS("Headings"), TEXT("Text"), PHOTO_BORDER("Photo border"),
+private enum class ColorTarget(@StringRes val label: Int) {
+    ACCENT(R.string.color_accent), SIDEBAR(R.string.color_sidebar), BACKGROUND(R.string.color_background), NAME(R.string.color_name), JOB_TITLE(R.string.color_job_title),
+    HEADINGS(R.string.color_headings), TEXT(R.string.color_text), PHOTO_BORDER(R.string.color_photo_border),
 }
 
 private fun ResumeStyle.colorOf(target: ColorTarget): Long? = when (target) {
@@ -351,7 +357,7 @@ private fun ColorOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
     var target by rememberSaveable { mutableStateOf(ColorTarget.ACCENT) }
     var picking by remember { mutableStateOf(false) }
     Column(Modifier.verticalScroll(rememberScrollState())) {
-        ChoiceChips(options = targets, selected = target, label = { it.label }, onSelect = { target = it }, contentPadding = PaddingValues(horizontal = 16.dp))
+        ChoiceChips(options = targets, selected = target, label = { stringResource(it.label) }, onSelect = { target = it }, contentPadding = PaddingValues(horizontal = 16.dp))
         Spacer(Modifier.height(12.dp))
         SwatchRow(
             selected = resume.style.colorOf(target),
@@ -360,13 +366,13 @@ private fun ColorOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
         )
         Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (resume.style.colorOf(target) == null) "Using template default" else "Custom ${target.label.lowercase()} color",
+                if (resume.style.colorOf(target) == null) stringResource(R.string.color_using_default) else stringResource(R.string.color_custom_named, stringResource(target.label)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             if (resume.style.colorOf(target) != null) {
-                TextButton(onClick = { viewModel.updateStyle { it.withColor(target, null) } }) { Text("Use default") }
+                TextButton(onClick = { viewModel.updateStyle { it.withColor(target, null) } }) { Text(stringResource(R.string.color_use_default)) }
             }
         }
     }
@@ -374,7 +380,7 @@ private fun ColorOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
         val initial = Color((resume.style.colorOf(target) ?: spec.accent).toInt())
         ColorPickerDialog(
             initial = initial,
-            title = "${target.label} color",
+            title = stringResource(R.string.color_title, stringResource(target.label)),
             onDismiss = { picking = false },
             onConfirm = { color ->
                 picking = false
@@ -392,7 +398,7 @@ private fun FontOptions(style: ResumeStyle, viewModel: ResumePreviewViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(bottom = 10.dp)) {
                 row.forEach { font ->
                     val family = remember(font) { FontFamily(Typeface.create(font.family, Typeface.NORMAL)) }
-                    OptionTile(font.label, selected = style.font == font, fontFamily = family, modifier = Modifier.weight(1f)) {
+                    OptionTile(font.displayName(), selected = style.font == font, fontFamily = family, modifier = Modifier.weight(1f)) {
                         viewModel.updateStyle { it.copy(font = font) }
                     }
                 }
@@ -407,21 +413,21 @@ private fun LayoutOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
     val spec = TemplateCatalog.byId(resume.templateId)
     val style = resume.style
     ScrollColumn {
-        Text("Page size", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.page_size), style = MaterialTheme.typography.titleSmall)
         Spacer(Modifier.height(8.dp))
-        ChoiceChips(options = PageSize.entries, selected = style.pageSize, label = { it.label }, onSelect = { size -> viewModel.updateStyle { it.copy(pageSize = size) } })
+        ChoiceChips(options = PageSize.entries, selected = style.pageSize, label = { it.displayName() }, onSelect = { size -> viewModel.updateStyle { it.copy(pageSize = size) } })
         Spacer(Modifier.height(14.dp))
         if (spec.layout != LayoutKind.SINGLE_COLUMN) {
-            LabeledSlider("Column width", style.columnWidth, { v -> viewModel.updateStyle { it.copy(columnWidth = v) } }, -10f..12f, steps = 21, valueLabel = { "${if (it > 0) "+" else ""}${it.toInt()}%" })
+            LabeledSlider(stringResource(R.string.column_width), style.columnWidth, { v -> viewModel.updateStyle { it.copy(columnWidth = v) } }, -10f..12f, steps = 21, valueLabel = { "${if (it > 0) "+" else ""}${it.toInt()}%" })
             Row(Modifier.fillMaxWidth().clickable { viewModel.updateStyle { it.copy(swapColumns = !it.swapColumns) } }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Swap columns", style = MaterialTheme.typography.bodyLarge)
-                    Text("Move the narrow column to the other side", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.swap_columns), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.swap_columns_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(checked = style.swapColumns, onCheckedChange = { checked -> viewModel.updateStyle { it.copy(swapColumns = checked) } })
             }
         } else {
-            Text("This template uses a single column. Try Midnight, Evergreen or Editorial for two-column layouts.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.single_column_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -433,19 +439,19 @@ private fun PhotoOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
     ScrollColumn {
         if (!hasPhoto) {
             Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                Text("Add a profile photo in the Contact section to use these options.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
+                Text(stringResource(R.string.photo_add_note), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(12.dp))
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Show profile photo", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.photo_show), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Switch(checked = style.showPhoto, onCheckedChange = { checked -> viewModel.updateStyle { it.copy(showPhoto = checked) } })
         }
-        LabeledSlider("Photo size", style.photoSize, { v -> viewModel.updateStyle { it.copy(photoSize = v) } }, -40f..50f)
+        LabeledSlider(stringResource(R.string.photo_size), style.photoSize, { v -> viewModel.updateStyle { it.copy(photoSize = v) } }, -40f..50f)
         LabeledSlider(
-            "Corner roundness", style.photoCornerRadius ?: if (TemplateCatalog.byId(resume.templateId).photoRound) 50f else 10f,
+            stringResource(R.string.photo_corner), style.photoCornerRadius ?: if (TemplateCatalog.byId(resume.templateId).photoRound) 50f else 10f,
             { v -> viewModel.updateStyle { it.copy(photoCornerRadius = v) } }, 0f..50f, valueLabel = { "${it.toInt()}%" },
         )
-        LabeledSlider("Border width", style.photoBorderWidth ?: 2f, { v -> viewModel.updateStyle { it.copy(photoBorderWidth = v) } }, 0f..8f, steps = 15, valueLabel = { "%.1f".format(it) })
+        LabeledSlider(stringResource(R.string.photo_border_width), style.photoBorderWidth ?: 2f, { v -> viewModel.updateStyle { it.copy(photoBorderWidth = v) } }, 0f..8f, steps = 15, valueLabel = { "%.1f".format(it) })
     }
 }
 
@@ -453,10 +459,10 @@ private fun PhotoOptions(resume: Resume, viewModel: ResumePreviewViewModel) {
 private fun ContactOptions(style: ResumeStyle, viewModel: ResumePreviewViewModel) {
     ScrollColumn {
         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Show contact icons", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.contact_show_icons), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Switch(checked = style.showContactIcons, onCheckedChange = { checked -> viewModel.updateStyle { it.copy(showContactIcons = checked) } })
         }
-        Text("Order & visibility", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+        Text(stringResource(R.string.contact_order), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
         style.contactOrder.forEachIndexed { index, field ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
@@ -465,12 +471,12 @@ private fun ContactOptions(style: ResumeStyle, viewModel: ResumePreviewViewModel
                         viewModel.updateStyle { it.copy(hiddenContactFields = if (show) it.hiddenContactFields - field else it.hiddenContactFields + field) }
                     },
                 )
-                Text(field.label, modifier = Modifier.weight(1f))
+                Text(field.displayName(), modifier = Modifier.weight(1f))
                 IconButton(onClick = { viewModel.updateStyle { it.copy(contactOrder = it.contactOrder.moved(index, -1)) } }, enabled = index > 0) {
-                    Icon(Icons.Rounded.KeyboardArrowUp, "Move up")
+                    Icon(Icons.Rounded.KeyboardArrowUp, stringResource(R.string.move_up))
                 }
                 IconButton(onClick = { viewModel.updateStyle { it.copy(contactOrder = it.contactOrder.moved(index, 1)) } }, enabled = index < style.contactOrder.lastIndex) {
-                    Icon(Icons.Rounded.KeyboardArrowDown, "Move down")
+                    Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.move_down))
                 }
             }
         }

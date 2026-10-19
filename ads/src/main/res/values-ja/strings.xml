@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ads_attribution">広告</string>
+    <string name="ads_is_showing">広告を表示中</string>
+</resources>

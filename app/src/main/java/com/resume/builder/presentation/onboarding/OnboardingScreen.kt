@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.onboarding
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -56,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.annotation.StringRes
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -96,16 +99,17 @@ class OnboardingViewModel(
     fun finish(source: String?) = prefs.setOnboardingDone(source)
 }
 
-private data class ReferralOption(val label: String, val icon: ImageVector, val tint: Color)
+/** [label] is the analytics value and stays in English; [title] is shown to the user. */
+private data class ReferralOption(val label: String, @StringRes val title: Int, val icon: ImageVector, val tint: Color)
 
 private val referralOptions = listOf(
-    ReferralOption("YouTube", Icons.Rounded.SmartDisplay, Color(0xFFFF0033)),
-    ReferralOption("TikTok", Icons.Rounded.MusicNote, Color(0xFF111111)),
-    ReferralOption("Social media", Icons.Rounded.Groups, Color(0xFF1877F2)),
-    ReferralOption("Play Store", Icons.Rounded.Shop, Color(0xFF01875F)),
-    ReferralOption("Google search", Icons.Rounded.Search, Color(0xFF4285F4)),
-    ReferralOption("Friend or family", Icons.Rounded.People, Color(0xFFF59E0B)),
-    ReferralOption("Other", Icons.Rounded.MoreHoriz, Color(0xFF6B7280)),
+    ReferralOption("YouTube", R.string.referral_youtube, Icons.Rounded.SmartDisplay, Color(0xFFFF0033)),
+    ReferralOption("TikTok", R.string.referral_tiktok, Icons.Rounded.MusicNote, Color(0xFF111111)),
+    ReferralOption("Social media", R.string.referral_social, Icons.Rounded.Groups, Color(0xFF1877F2)),
+    ReferralOption("Play Store", R.string.referral_play_store, Icons.Rounded.Shop, Color(0xFF01875F)),
+    ReferralOption("Google search", R.string.referral_google, Icons.Rounded.Search, Color(0xFF4285F4)),
+    ReferralOption("Friend or family", R.string.referral_friend, Icons.Rounded.People, Color(0xFFF59E0B)),
+    ReferralOption("Other", R.string.referral_other, Icons.Rounded.MoreHoriz, Color(0xFF6B7280)),
 )
 
 @Composable
@@ -153,22 +157,22 @@ private fun WelcomePage(onContinue: () -> Unit, onLegal: (String) -> Unit) {
         BrandLogo(Modifier.scale(logoScale), size = 112.dp)
         Spacer(Modifier.height(28.dp))
         Text(
-            "Resume Builder",
+            stringResource(R.string.app_name),
             style = MaterialTheme.typography.displaySmall.copy(brush = Gradients.brand),
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Craft a standout resume in minutes — and land the interview.",
+            stringResource(R.string.onboarding_title),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(36.dp))
         val features = listOf(
-            Triple(Icons.Rounded.Dashboard, "${TemplateCatalog.all.size} designer templates", "Modern, creative and ATS-friendly layouts") to MaterialTheme.colorScheme.primary,
-            Triple(Icons.Rounded.AutoAwesome, "AI writing assistant", "Generate resumes & tailored cover letters") to Violet,
-            Triple(Icons.Rounded.PictureAsPdf, "Pixel-perfect PDFs", "Plus merge, compress, split and sign tools") to Teal,
+            Triple(Icons.Rounded.Dashboard, stringResource(R.string.onboarding_feature_templates, TemplateCatalog.all.size), stringResource(R.string.onboarding_feature_templates_desc)) to MaterialTheme.colorScheme.primary,
+            Triple(Icons.Rounded.AutoAwesome, stringResource(R.string.onboarding_feature_ai), stringResource(R.string.onboarding_feature_ai_desc)) to Violet,
+            Triple(Icons.Rounded.PictureAsPdf, stringResource(R.string.onboarding_feature_pdf), stringResource(R.string.onboarding_feature_pdf_desc)) to Teal,
         )
         features.forEachIndexed { index, (feature, tint) ->
             AnimatedVisibility(
@@ -186,7 +190,7 @@ private fun WelcomePage(onContinue: () -> Unit, onLegal: (String) -> Unit) {
             screen = "Onboarding",
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
-        GradientButton("Get started", onClick = onContinue, modifier = Modifier.fillMaxWidth())
+        GradientButton(stringResource(R.string.onboarding_get_started), onClick = onContinue, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(14.dp))
         LegalText(onLegal)
         Spacer(Modifier.height(16.dp))
@@ -217,11 +221,20 @@ private fun FeatureRow(icon: ImageVector, title: String, subtitle: String, tint:
 @Composable
 fun LegalText(onLegal: (String) -> Unit) {
     val linkStyle = TextLinkStyles(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline))
+    val template = stringResource(R.string.legal_agreement)
+    val terms = stringResource(R.string.legal_terms)
+    val privacy = stringResource(R.string.legal_privacy)
     val text = buildAnnotatedString {
-        append("By continuing you agree to our ")
-        withLink(LinkAnnotation.Clickable("terms", linkStyle) { onLegal("terms") }) { append("Terms of Service") }
-        append(" and ")
-        withLink(LinkAnnotation.Clickable("privacy", linkStyle) { onLegal("privacy") }) { append("Privacy Policy") }
+        // Placeholders keep the links in the right place for every word order.
+        val parts = template.split("%1\$s", "%2\$s")
+        val termsFirst = template.indexOf("%1\$s") < template.indexOf("%2\$s")
+        val links = listOf("terms" to terms, "privacy" to privacy).let { if (termsFirst) it else it.reversed() }
+        parts.forEachIndexed { index, part ->
+            append(part)
+            links.getOrNull(index)?.let { (tag, label) ->
+                withLink(LinkAnnotation.Clickable(tag, linkStyle) { onLegal(tag) }) { append(label) }
+            }
+        }
     }
     Text(
         text,
@@ -238,13 +251,13 @@ private fun ReferralPage(onContinue: (String?) -> Unit) {
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = { onContinue(null) }) { Text("Skip") }
+            TextButton(onClick = { onContinue(null) }) { Text(stringResource(R.string.common_skip)) }
         }
         Spacer(Modifier.height(12.dp))
-        Text("How did you find us?", style = MaterialTheme.typography.headlineLarge.copy(brush = Gradients.brand))
+        Text(stringResource(R.string.referral_title), style = MaterialTheme.typography.headlineLarge.copy(brush = Gradients.brand))
         Spacer(Modifier.height(8.dp))
         Text(
-            "Your answer helps us reach more job seekers like you.",
+            stringResource(R.string.referral_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -274,7 +287,7 @@ private fun ReferralPage(onContinue: (String?) -> Unit) {
                             if (isSelected) Icon(Icons.Rounded.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
                         }
                         Spacer(Modifier.height(14.dp))
-                        Text(option.label, style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(option.title), style = MaterialTheme.typography.titleSmall)
                     }
                 }
             }
@@ -286,9 +299,9 @@ private fun ReferralPage(onContinue: (String?) -> Unit) {
             screen = "Referral",
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
-        GradientButton("Continue", onClick = { onContinue(selected) }, enabled = selected != null, modifier = Modifier.fillMaxWidth())
+        GradientButton(stringResource(R.string.common_continue), onClick = { onContinue(selected) }, enabled = selected != null, modifier = Modifier.fillMaxWidth())
         Text(
-            if (selected == null) "Pick an option to continue" else "Thanks! You're all set ✨",
+            if (selected == null) stringResource(R.string.referral_pick) else stringResource(R.string.referral_thanks),
             style = MaterialTheme.typography.bodySmall,
             color = if (selected == null) MaterialTheme.colorScheme.onSurfaceVariant else Amber,
             textAlign = TextAlign.Center,

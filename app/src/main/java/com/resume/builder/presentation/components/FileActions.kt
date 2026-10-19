@@ -1,5 +1,6 @@
 package com.resume.builder.presentation.components
 
+import com.resume.builder.R
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -19,9 +20,9 @@ object FileActions {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
-            context.startActivity(Intent.createChooser(intent, "Open with").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.open_with)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "No app found to open this file", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.error_no_app_to_open), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -32,14 +33,14 @@ object FileActions {
             putExtra(Intent.EXTRA_SUBJECT, subject)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Share").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.common_share)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     fun openUrl(context: Context, url: String) {
         try {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "No browser available", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.error_no_browser), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -54,21 +55,21 @@ object FileActions {
 
     fun sendFeedback(context: Context, version: String) {
         val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
-            putExtra(Intent.EXTRA_SUBJECT, "Resume Builder feedback (v$version)")
+            putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.feedback_subject, context.getString(R.string.app_name), version))
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             context.startActivity(intent)
         } catch (_: ActivityNotFoundException) {
-            Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.error_no_email_app), Toast.LENGTH_SHORT).show()
         }
     }
 
     fun shareApp(context: Context) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "Build a job-winning resume in minutes: https://play.google.com/store/apps/details?id=${context.packageName}")
+            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_app_text, "https://play.google.com/store/apps/details?id=${context.packageName}"))
         }
-        context.startActivity(Intent.createChooser(intent, "Share app").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        context.startActivity(Intent.createChooser(intent, context.getString(R.string.drawer_share)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }

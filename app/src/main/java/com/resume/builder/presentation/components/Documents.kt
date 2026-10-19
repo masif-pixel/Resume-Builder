@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -81,18 +83,18 @@ fun PagesPreview(pages: List<Bitmap>, modifier: Modifier = Modifier, contentPadd
                 Box {
                     Image(
                         page.asImageBitmap(),
-                        contentDescription = "Page ${index + 1}",
+                        contentDescription = stringResource(R.string.page_number, index + 1),
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier.fillMaxWidth().aspectRatio(page.width.toFloat() / page.height)
                             .shadow(10.dp, RoundedCornerShape(4.dp)).clip(RoundedCornerShape(4.dp))
                             .clickable { zoomed = page },
                     )
                     Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f), modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)) {
-                        Icon(Icons.Rounded.ZoomIn, "Zoom", tint = Color.White, modifier = Modifier.padding(6.dp).size(18.dp))
+                        Icon(Icons.Rounded.ZoomIn, stringResource(R.string.common_zoom), tint = Color.White, modifier = Modifier.padding(6.dp).size(18.dp))
                     }
                 }
                 if (pages.size > 1) {
-                    Text("Page ${index + 1} of ${pages.size}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+                    Text(stringResource(R.string.page_of, index + 1, pages.size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
                 }
             }
         }
@@ -124,10 +126,10 @@ fun ZoomDialog(bitmap: Bitmap, onDismiss: () -> Unit) {
                     .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y),
             )
             IconButton(onClick = onDismiss, modifier = Modifier.statusBarsPadding().padding(8.dp).align(Alignment.TopEnd)) {
-                Icon(Icons.Rounded.Close, "Close", tint = Color.White)
+                Icon(Icons.Rounded.Close, stringResource(R.string.common_close), tint = Color.White)
             }
             Text(
-                "Pinch or double-tap to zoom",
+                stringResource(R.string.zoom_hint),
                 color = Color.White.copy(alpha = 0.7f),
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp),
@@ -143,7 +145,7 @@ fun ExportedDialog(file: SavedFile, onDismiss: () -> Unit, onViewSaved: () -> Un
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.CheckCircle, null, tint = Success, modifier = Modifier.size(48.dp)) },
-        title = { Text("Saved successfully") },
+        title = { Text(stringResource(R.string.saved_success)) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 message?.let {
@@ -160,22 +162,22 @@ fun ExportedDialog(file: SavedFile, onDismiss: () -> Unit, onViewSaved: () -> Un
                 Button(onClick = { openFile(file.path, file.mimeType, file.name) }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
                     Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Open")
+                    Text(stringResource(R.string.common_open))
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = { FileActions.share(context, file.path, file.mimeType) }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
                     Icon(Icons.Rounded.Share, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Share")
+                    Text(stringResource(R.string.common_share))
                 }
                 TextButton(onClick = onViewSaved) {
                     Icon(Icons.Rounded.Folder, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("View in Saved files")
+                    Text(stringResource(R.string.saved_view_in_files))
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
     )
 }
 
@@ -185,7 +187,7 @@ fun <T> DropdownField(
     label: String,
     options: List<T>,
     selected: T,
-    optionLabel: (T) -> String,
+    optionLabel: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {

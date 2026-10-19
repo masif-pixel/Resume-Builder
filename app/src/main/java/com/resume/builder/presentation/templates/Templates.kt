@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.templates
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
@@ -52,6 +54,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import com.pixelforge.ads.nativead.NativeAdSlot
 import com.pixelforge.ads.nativead.NativeAdTemplate
 import com.pixelforge.ads.remoteconfig.AdFormat
@@ -79,6 +83,8 @@ import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.ChoiceChips
 import com.resume.builder.presentation.components.GradientButton
 import com.resume.builder.presentation.components.CreateResumeDialog
+import com.resume.builder.presentation.components.displayName
+import com.resume.builder.presentation.components.localizedTagline
 import com.resume.builder.presentation.main.MainActions
 import com.resume.builder.ui.theme.Success
 import kotlinx.coroutines.channels.Channel
@@ -148,9 +154,9 @@ fun TemplatesTab(actions: MainActions, onOpenDrawer: () -> Unit, viewModel: Temp
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Templates",
-                subtitle = "Recruiter-approved designs",
-                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, "Menu") } },
+                title = stringResource(R.string.tab_templates),
+                subtitle = stringResource(R.string.templates_subtitle),
+                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, stringResource(R.string.common_menu)) } },
             )
         },
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
@@ -158,15 +164,15 @@ fun TemplatesTab(actions: MainActions, onOpenDrawer: () -> Unit, viewModel: Temp
         TemplateGallery(
             viewModel = viewModel,
             selectedId = null,
-            actionLabel = "Use this template",
+            actionLabel = stringResource(R.string.template_use),
             onChoose = { creating = it },
             modifier = Modifier.padding(padding),
         )
     }
     creating?.let { spec ->
         CreateResumeDialog(
-            label = "e.g. Product Designer",
-            supporting = "Starting with the ${spec.name} template.",
+            label = stringResource(R.string.create_resume_hint_designer),
+            supporting = stringResource(R.string.template_starting_with, spec.name),
             onConfirm = { title, language -> creating = null; viewModel.create(spec, title, language) },
             onDismiss = { creating = null },
         )
@@ -187,16 +193,19 @@ fun TemplatePickerScreen(
         .let { flow -> remember(resumeId) { flow } }
         .collectAsStateWithLifecycle(initialValue = null)
 
+    val context = LocalContext.current
+
+    val resources = LocalResources.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is TemplateEvent.Created -> onCreated(event.resumeId)
-                is TemplateEvent.Applied -> snackbar.showSnackbar("${event.name} applied")
+                is TemplateEvent.Applied -> snackbar.showSnackbar(resources.getString(R.string.template_applied, event.name))
             }
         }
     }
     Scaffold(
-        topBar = { AppTopBar(title = if (resumeId == null) "Choose a template" else "Change template", onBack = onBack) },
+        topBar = { AppTopBar(title = if (resumeId == null) stringResource(R.string.choose_template) else stringResource(R.string.change_template), onBack = onBack) },
         bottomBar = {
             NativeAdSlot(
                 placement = AdFormat.NATIVE_TEMPLATES,
@@ -212,15 +221,15 @@ fun TemplatePickerScreen(
         TemplateGallery(
             viewModel = viewModel,
             selectedId = currentId,
-            actionLabel = if (resumeId == null) "Use this template" else "Apply to resume",
+            actionLabel = if (resumeId == null) stringResource(R.string.template_use) else stringResource(R.string.template_apply),
             onChoose = { spec -> if (resumeId == null) creating = spec else viewModel.apply(resumeId, spec) },
             modifier = Modifier.padding(padding),
         )
     }
     creating?.let { spec ->
         CreateResumeDialog(
-            label = "e.g. Marketing Manager",
-            supporting = "Starting with the ${spec.name} template.",
+            label = stringResource(R.string.create_resume_hint_marketing),
+            supporting = stringResource(R.string.template_starting_with, spec.name),
             onConfirm = { title, language -> creating = null; viewModel.create(spec, title, language) },
             onDismiss = { creating = null },
         )
@@ -266,7 +275,7 @@ private fun TemplateGallery(
             ChoiceChips(
                 options = listOf<TemplateCategory?>(null) + TemplateCategory.entries,
                 selected = category,
-                label = { it?.label ?: "All" },
+                label = { it?.displayName() ?: stringResource(R.string.filter_all) },
                 onSelect = { category = it },
                 modifier = Modifier.padding(bottom = 4.dp),
             )
@@ -286,7 +295,7 @@ private fun TemplateGallery(
             spec = spec,
             viewModel = viewModel,
             placeholder = thumbnails[spec.id],
-            actionLabel = if (spec.id == selectedId) "Current template" else actionLabel,
+            actionLabel = if (spec.id == selectedId) stringResource(R.string.template_current) else actionLabel,
             actionEnabled = spec.id != selectedId,
             onDismiss = { previewing = null },
             onChoose = { previewing = null; onChoose(spec) },
@@ -310,7 +319,7 @@ private fun TemplateCard(spec: TemplateSpec, thumbnail: Bitmap?, selected: Boole
                 if (thumbnail != null) {
                     Image(
                         thumbnail.asImageBitmap(),
-                        contentDescription = "${spec.name} template",
+                        contentDescription = stringResource(R.string.template_named, spec.name),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize().shadow(6.dp, RoundedCornerShape(4.dp)).clip(RoundedCornerShape(4.dp)),
                     )
@@ -319,7 +328,7 @@ private fun TemplateCard(spec: TemplateSpec, thumbnail: Bitmap?, selected: Boole
                 }
                 if (selected) {
                     Icon(
-                        Icons.Rounded.CheckCircle, "Selected", tint = MaterialTheme.colorScheme.primary,
+                        Icons.Rounded.CheckCircle, stringResource(R.string.common_selected), tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.TopEnd).background(Color.White, CircleShape),
                     )
                 }
@@ -339,7 +348,7 @@ private fun TemplateCard(spec: TemplateSpec, thumbnail: Bitmap?, selected: Boole
                     Spacer(Modifier.width(6.dp))
                     Text(spec.name, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 }
-                Text(spec.tagline, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(spec.localizedTagline(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -360,10 +369,10 @@ private fun TemplatePreviewDialog(
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Close") }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.common_close)) }
                     Column(Modifier.weight(1f)) {
                         Text(spec.name, style = MaterialTheme.typography.titleLarge)
-                        Text("${spec.category.label} · ${spec.tagline}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.template_category_tagline, spec.category.displayName(), spec.localizedTagline()), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Box(

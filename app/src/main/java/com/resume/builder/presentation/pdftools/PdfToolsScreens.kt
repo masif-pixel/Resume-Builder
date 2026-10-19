@@ -1,5 +1,8 @@
 package com.resume.builder.presentation.pdftools
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -108,7 +111,7 @@ import kotlin.math.roundToInt
 @Composable
 fun PdfToolsScreen(onBack: () -> Unit, onTool: (PdfTool) -> Unit) {
     Scaffold(
-        topBar = { AppTopBar(title = "PDF tools", subtitle = "Everything runs privately on your device", onBack = onBack) },
+        topBar = { AppTopBar(title = stringResource(R.string.drawer_pdf_tools), subtitle = stringResource(R.string.pdf_tools_subtitle), onBack = onBack) },
         bottomBar = {
             NativeAdSlot(
                 placement = AdFormat.NATIVE_PDF_TOOLS,
@@ -139,8 +142,8 @@ fun PdfToolsScreen(onBack: () -> Unit, onTool: (PdfTool) -> Unit) {
                         }
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(tool.title, style = MaterialTheme.typography.titleMedium)
-                            Text(tool.subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(tool.title), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(tool.subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -160,10 +163,11 @@ fun PdfToolScreen(
     val viewModel: PdfToolViewModel = koinViewModel(key = "tool-$toolName") { parametersOf(tool) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-    LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it) } }
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { viewModel.messages.collect { snackbar.showSnackbar(it.resolve(context)) } }
 
     Scaffold(
-        topBar = { AppTopBar(title = tool.title, onBack = onBack) },
+        topBar = { AppTopBar(title = stringResource(tool.title), onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -173,22 +177,22 @@ fun PdfToolScreen(
                 tool == PdfTool.MERGE -> MergeContent(state, viewModel)
                 state.pdf == null -> PickPdfContent(tool, onPick = viewModel::loadPdf)
                 tool == PdfTool.COMPRESS -> CompressContent(state, viewModel)
-                tool == PdfTool.SPLIT -> PageSelectContent(state, viewModel, actionLabel = { "Extract $it" }, onAction = viewModel::extract)
-                tool == PdfTool.TO_IMAGES -> PageSelectContent(state, viewModel, actionLabel = { "Export $it" }, onAction = viewModel::exportImages) {
-                    Text("Format", style = MaterialTheme.typography.titleSmall)
+                tool == PdfTool.SPLIT -> PageSelectContent(state, viewModel, actionLabel = { stringResource(R.string.tool_extract_count, it) }, onAction = viewModel::extract)
+                tool == PdfTool.TO_IMAGES -> PageSelectContent(state, viewModel, actionLabel = { stringResource(R.string.tool_export_count, it) }, onAction = viewModel::exportImages) {
+                    Text(stringResource(R.string.tool_format), style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(6.dp))
                     ChoiceChips(ImageFormat.entries, state.imageFormat, { it.label }, viewModel::setImageFormat)
                     Spacer(Modifier.height(10.dp))
-                    Text("Quality", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.tool_quality), style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(6.dp))
-                    ChoiceChips(ImageQuality.entries, state.imageQuality, { it.label }, viewModel::setImageQuality)
+                    ChoiceChips(ImageQuality.entries, state.imageQuality, { it.displayName() }, viewModel::setImageQuality)
                 }
                 tool == PdfTool.SIGN -> SignContent(state, viewModel)
             }
         }
     }
     if (state.working) {
-        LoadingDialog(title = "Working on it", message = "Processing your file…")
+        LoadingDialog(title = stringResource(R.string.tool_working_title), message = stringResource(R.string.tool_working_message))
     }
 }
 
@@ -202,9 +206,9 @@ private fun FileHeader(name: String, size: Long, pages: Int, onClear: () -> Unit
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${formatBytes(size)} · $pages ${if (pages == 1) "page" else "pages"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.file_size_pages, formatBytes(size), pluralStringResource(R.plurals.pages_count, pages, pages)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = onClear) { Icon(Icons.Rounded.Close, "Remove file") }
+            IconButton(onClick = onClear) { Icon(Icons.Rounded.Close, stringResource(R.string.tool_remove_file)) }
         }
     }
 }
@@ -217,11 +221,11 @@ private fun PickPdfContent(tool: PdfTool, onPick: (android.net.Uri) -> Unit) {
             Icon(tool.icon, null, tint = tool.color, modifier = Modifier.size(52.dp))
         }
         Spacer(Modifier.height(20.dp))
-        Text(tool.title, style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(tool.title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(6.dp))
-        Text(tool.subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(tool.subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
-        GradientButton("Choose PDF", onClick = { picker.launch(arrayOf("application/pdf")) }, icon = Icons.Rounded.UploadFile)
+        GradientButton(stringResource(R.string.tool_choose_pdf), onClick = { picker.launch(arrayOf("application/pdf")) }, icon = Icons.Rounded.UploadFile)
     }
 }
 
@@ -237,24 +241,24 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                 Icon(PdfTool.MERGE.icon, null, tint = PdfTool.MERGE.color, modifier = Modifier.size(52.dp))
             }
             Spacer(Modifier.height(20.dp))
-            Text("Pick photos and PDFs to merge them into a single document.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.merge_intro), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
-            GradientButton("Add files", onClick = { chooser = true }, icon = Icons.Rounded.Add)
+            GradientButton(stringResource(R.string.merge_add_files), onClick = { chooser = true }, icon = Icons.Rounded.Add)
         }
     } else {
         Column(Modifier.fillMaxSize()) {
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
                     Column {
-                        Text("Image page size", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.merge_image_page_size), style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(6.dp))
-                        ChoiceChips(ToolPageSize.entries, state.pageSize, { it.label }, viewModel::setPageSize)
+                        ChoiceChips(ToolPageSize.entries, state.pageSize, { it.displayName() }, viewModel::setPageSize)
                         Spacer(Modifier.height(12.dp))
-                        Text("Orientation", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.merge_orientation), style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(6.dp))
-                        ChoiceChips(ToolOrientation.entries, state.orientation, { it.label }, viewModel::setOrientation)
+                        ChoiceChips(ToolOrientation.entries, state.orientation, { it.displayName() }, viewModel::setOrientation)
                         Spacer(Modifier.height(12.dp))
-                        LabeledSlider("Image margin", state.marginMm, viewModel::setMargin, 0f..20f, steps = 19, valueLabel = { "${it.roundToInt()} mm" })
+                        LabeledSlider(stringResource(R.string.merge_image_margin), state.marginMm, viewModel::setMargin, 0f..20f, steps = 19, valueLabel = { "${it.roundToInt()} mm" })
                     }
                 }
                 itemsIndexed(state.mergeItems, key = { index, item -> "$index-${item.uri}" }) { index, item ->
@@ -267,11 +271,11 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(item.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(if (item.isPdf) "PDF · ${formatBytes(item.sizeBytes)}" else "Image · ${formatBytes(item.sizeBytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(if (item.isPdf) stringResource(R.string.merge_item_pdf, formatBytes(item.sizeBytes)) else stringResource(R.string.merge_item_image, formatBytes(item.sizeBytes)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            IconButton(onClick = { viewModel.moveMergeItem(index, -1) }, enabled = index > 0) { Icon(Icons.Rounded.KeyboardArrowUp, "Move up") }
-                            IconButton(onClick = { viewModel.moveMergeItem(index, 1) }, enabled = index < state.mergeItems.lastIndex) { Icon(Icons.Rounded.KeyboardArrowDown, "Move down") }
-                            IconButton(onClick = { viewModel.removeMergeItem(index) }) { Icon(Icons.Rounded.Close, "Remove") }
+                            IconButton(onClick = { viewModel.moveMergeItem(index, -1) }, enabled = index > 0) { Icon(Icons.Rounded.KeyboardArrowUp, stringResource(R.string.move_up)) }
+                            IconButton(onClick = { viewModel.moveMergeItem(index, 1) }, enabled = index < state.mergeItems.lastIndex) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.move_down)) }
+                            IconButton(onClick = { viewModel.removeMergeItem(index) }) { Icon(Icons.Rounded.Close, stringResource(R.string.common_remove)) }
                         }
                     }
                 }
@@ -280,9 +284,9 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                 OutlinedButton(onClick = { chooser = true }, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
                     Icon(Icons.Rounded.Add, null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Add more")
+                    Text(stringResource(R.string.merge_add_more))
                 }
-                GradientButton("Merge (${state.mergeItems.size})", onClick = viewModel::merge, modifier = Modifier.weight(1f))
+                GradientButton(stringResource(R.string.tool_merge_count, state.mergeItems.size), onClick = viewModel::merge, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -290,12 +294,12 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
     if (chooser) {
         AlertDialog(
             onDismissRequest = { chooser = false },
-            title = { Text("Add files") },
+            title = { Text(stringResource(R.string.merge_add_files)) },
             text = {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Photos") },
-                        supportingContent = { Text("Pick images from your gallery") },
+                        headlineContent = { Text(stringResource(R.string.merge_photos)) },
+                        supportingContent = { Text(stringResource(R.string.merge_photos_desc)) },
                         leadingContent = { Icon(Icons.Rounded.Image, null) },
                         modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable {
                             chooser = false
@@ -303,8 +307,8 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                         },
                     )
                     ListItem(
-                        headlineContent = { Text("Files") },
-                        supportingContent = { Text("PDFs and images from storage") },
+                        headlineContent = { Text(stringResource(R.string.merge_files)) },
+                        supportingContent = { Text(stringResource(R.string.merge_files_desc)) },
                         leadingContent = { Icon(Icons.Rounded.PictureAsPdf, null) },
                         modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable {
                             chooser = false
@@ -313,7 +317,7 @@ private fun MergeContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                     )
                 }
             },
-            confirmButton = { TextButton(onClick = { chooser = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { chooser = false }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 }
@@ -324,7 +328,7 @@ private fun CompressContent(state: PdfToolState, viewModel: PdfToolViewModel) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             FileHeader(pdf.name, pdf.sizeBytes, pdf.pageCount, viewModel::clearPdf)
-            Text("Compression level", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.compression_level), style = MaterialTheme.typography.titleMedium)
             CompressionLevel.entries.forEach { level ->
                 val selected = level == state.compression
                 Surface(
@@ -336,20 +340,20 @@ private fun CompressContent(state: PdfToolState, viewModel: PdfToolViewModel) {
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(level.label, style = MaterialTheme.typography.titleSmall)
-                            Text(level.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(level.displayName(), style = MaterialTheme.typography.titleSmall)
+                            Text(level.displayDescription(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (selected) Icon(Icons.Rounded.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
             Text(
-                "Pages are re-rendered as images to reduce size, so text in the result can't be selected.",
+                stringResource(R.string.compression_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        GradientButton("Compress PDF", onClick = viewModel::compress, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp))
+        GradientButton(stringResource(R.string.tool_compress), onClick = viewModel::compress, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp))
     }
 }
 
@@ -357,7 +361,7 @@ private fun CompressContent(state: PdfToolState, viewModel: PdfToolViewModel) {
 private fun PageSelectContent(
     state: PdfToolState,
     viewModel: PdfToolViewModel,
-    actionLabel: (Int) -> String,
+    actionLabel: @Composable (Int) -> String,
     onAction: () -> Unit,
     options: (@Composable () -> Unit)? = null,
 ) {
@@ -375,16 +379,16 @@ private fun PageSelectContent(
                     FileHeader(pdf.name, pdf.sizeBytes, pdf.pageCount, viewModel::clearPdf)
                     options?.let { Column { it() } }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Tap pages to select", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.pages_tap_to_select), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                         val all = state.selectedPages.size == pdf.pageCount
-                        TextButton(onClick = { viewModel.selectAll(!all) }) { Text(if (all) "Clear" else "Select all") }
+                        TextButton(onClick = { viewModel.selectAll(!all) }) { Text(if (all) stringResource(R.string.common_clear) else stringResource(R.string.pages_select_all)) }
                     }
                 }
             }
             items(pdf.pageCount) { index ->
                 PageThumb(
                     bitmap = state.thumbnails[index],
-                    label = "Page ${index + 1}",
+                    label = stringResource(R.string.page_number, index + 1),
                     selected = index in state.selectedPages,
                     badge = if (index in state.selectedPages) "${state.selectedPages.sorted().indexOf(index) + 1}" else null,
                     onClick = { viewModel.togglePage(index) },
@@ -439,29 +443,29 @@ private fun SignContent(state: PdfToolState, viewModel: PdfToolViewModel) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             FileHeader(pdf.name, pdf.sizeBytes, pdf.pageCount, viewModel::clearPdf)
             if (state.signature == null) {
-                Text("1 · Draw your signature", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.sign_step_draw), style = MaterialTheme.typography.titleMedium)
                 SignaturePad(padState)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = padState::clear, modifier = Modifier.weight(1f)) { Text("Clear") }
-                    Button(onClick = { viewModel.setSignature(padState.toBitmap()) }, enabled = !padState.isEmpty, modifier = Modifier.weight(1f)) { Text("Next") }
+                    OutlinedButton(onClick = padState::clear, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.common_clear)) }
+                    Button(onClick = { viewModel.setSignature(padState.toBitmap()) }, enabled = !padState.isEmpty, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.common_next)) }
                 }
             } else {
-                Text("2 · Choose a page", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.sign_step_page), style = MaterialTheme.typography.titleMedium)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     repeat(pdf.pageCount) { index ->
                         Box(Modifier.width(84.dp)) {
-                            PageThumb(state.thumbnails[index], "Page ${index + 1}", index == state.signPage, null) { viewModel.setSignPage(index) }
+                            PageThumb(state.thumbnails[index], stringResource(R.string.page_number, index + 1), index == state.signPage, null) { viewModel.setSignPage(index) }
                         }
                     }
                 }
-                Text("3 · Drag the signature into place", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.sign_step_place), style = MaterialTheme.typography.titleMedium)
                 SignPlacement(state, viewModel)
-                LabeledSlider("Signature size", state.signWidth * 100, { viewModel.setSignatureWidth(it / 100f) }, 10f..70f, valueLabel = { "${it.roundToInt()}%" })
-                TextButton(onClick = { viewModel.setSignature(null) }) { Text("Redraw signature") }
+                LabeledSlider(stringResource(R.string.sign_size), state.signWidth * 100, { viewModel.setSignatureWidth(it / 100f) }, 10f..70f, valueLabel = { "${it.roundToInt()}%" })
+                TextButton(onClick = { viewModel.setSignature(null) }) { Text(stringResource(R.string.sign_redraw)) }
             }
         }
         GradientButton(
-            "Apply signature & save",
+            stringResource(R.string.sign_apply),
             onClick = viewModel::sign,
             enabled = state.signature != null,
             modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
@@ -483,10 +487,10 @@ private fun SignPlacement(state: PdfToolState, viewModel: PdfToolViewModel) {
         val heightPx = with(density) { maxHeight.toPx() }
         val sigW = widthPx * state.signWidth
         val sigH = sigW * signature.height / signature.width
-        Image(bitmap.asImageBitmap(), "Page preview", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+        Image(bitmap.asImageBitmap(), stringResource(R.string.page_preview), contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
         Image(
             signature.asImageBitmap(),
-            "Signature",
+            stringResource(R.string.signature_desc),
             modifier = Modifier
                 .offset { IntOffset((state.signX * widthPx - sigW / 2).roundToInt(), (state.signY * heightPx - sigH / 2).roundToInt()) }
                 .size(with(density) { sigW.toDp() }, with(density) { sigH.toDp() })
@@ -516,10 +520,10 @@ private fun ResultContent(result: ToolResult, onAgain: () -> Unit, onOpenSaved: 
             Icon(Icons.Rounded.CheckCircle, null, tint = Success, modifier = Modifier.size(60.dp))
         }
         Spacer(Modifier.height(18.dp))
-        Text(result.headline, style = MaterialTheme.typography.headlineMedium)
+        Text(result.headline.resolve(context), style = MaterialTheme.typography.headlineMedium)
         result.detail?.let {
             Spacer(Modifier.height(6.dp))
-            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(it.resolve(context), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(24.dp))
         result.files.take(4).forEach { file ->
@@ -529,17 +533,60 @@ private fun ResultContent(result: ToolResult, onAgain: () -> Unit, onOpenSaved: 
                         Text(file.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(formatBytes(file.sizeBytes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
-                    IconButton(onClick = { FileActions.share(context, file.path, file.mimeType) }) { Icon(Icons.Rounded.Share, "Share") }
+                    IconButton(onClick = { FileActions.share(context, file.path, file.mimeType) }) { Icon(Icons.Rounded.Share, stringResource(R.string.common_share)) }
                 }
             }
         }
-        if (result.files.size > 4) Text("+${result.files.size - 4} more in Saved files", style = MaterialTheme.typography.bodySmall)
+        if (result.files.size > 4) Text(stringResource(R.string.result_more_in_saved, result.files.size - 4), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(16.dp))
         if (first != null) {
-            GradientButton("Open", onClick = { openFile(first.path, first.mimeType, first.name) }, icon = Icons.AutoMirrored.Rounded.OpenInNew, modifier = Modifier.fillMaxWidth())
+            GradientButton(stringResource(R.string.common_open), onClick = { openFile(first.path, first.mimeType, first.name) }, icon = Icons.AutoMirrored.Rounded.OpenInNew, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
         }
-        OutlinedButton(onClick = onOpenSaved, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("View in Saved files") }
-        TextButton(onClick = onAgain) { Text("Start over") }
+        OutlinedButton(onClick = onOpenSaved, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.saved_view_in_files)) }
+        TextButton(onClick = onAgain) { Text(stringResource(R.string.tool_start_over)) }
     }
 }
+
+@Composable
+private fun ToolPageSize.displayName(): String = when (this) {
+    ToolPageSize.A4 -> label
+    ToolPageSize.LETTER -> stringResource(R.string.page_size_letter)
+    ToolPageSize.FIT -> stringResource(R.string.tool_page_fit)
+}
+
+@Composable
+private fun ToolOrientation.displayName(): String = stringResource(
+    when (this) {
+        ToolOrientation.AUTO -> R.string.orientation_auto
+        ToolOrientation.PORTRAIT -> R.string.orientation_portrait
+        ToolOrientation.LANDSCAPE -> R.string.orientation_landscape
+    },
+)
+
+@Composable
+private fun CompressionLevel.displayName(): String = stringResource(
+    when (this) {
+        CompressionLevel.LOW -> R.string.compression_light
+        CompressionLevel.MEDIUM -> R.string.compression_balanced
+        CompressionLevel.HIGH -> R.string.compression_strong
+    },
+)
+
+@Composable
+private fun CompressionLevel.displayDescription(): String = stringResource(
+    when (this) {
+        CompressionLevel.LOW -> R.string.compression_light_desc
+        CompressionLevel.MEDIUM -> R.string.compression_balanced_desc
+        CompressionLevel.HIGH -> R.string.compression_strong_desc
+    },
+)
+
+@Composable
+private fun ImageQuality.displayName(): String = stringResource(
+    when (this) {
+        ImageQuality.LOW -> R.string.quality_low
+        ImageQuality.MEDIUM -> R.string.quality_medium
+        ImageQuality.HIGH -> R.string.quality_high
+    },
+)

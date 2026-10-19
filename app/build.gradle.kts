@@ -31,6 +31,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    androidResources {
+        // Lists the translated languages in the system "App languages" settings (Android 13+).
+        generateLocaleConfig = true
+    }
+    bundle {
+        // The app switches language in-app, so every install needs all translations, not only the device language.
+        language {
+            enableSplit = false
+        }
+    }
     buildTypes {
         release {
             optimization {
@@ -49,6 +59,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 }
 

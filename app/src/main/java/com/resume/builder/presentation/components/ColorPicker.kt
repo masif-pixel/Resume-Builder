@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.components
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -77,7 +79,7 @@ fun SwatchRow(
             contentAlignment = Alignment.Center,
         ) {
             Box(Modifier.size(26.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Colorize, contentDescription = "Custom color", tint = Color.Black, modifier = Modifier.size(16.dp))
+                Icon(Icons.Rounded.Colorize, contentDescription = stringResource(R.string.color_custom), tint = Color.Black, modifier = Modifier.size(16.dp))
             }
         }
         ResumeSwatches.forEach { argb ->
@@ -155,7 +157,7 @@ fun ColorPickerDialog(
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Brightness", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.color_brightness), style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.width(12.dp))
                     CircleSlider(value = value, onValueChange = { update(v = it) }, valueRange = 0.05f..1f, modifier = Modifier.weight(1f))
                 }
@@ -173,14 +175,14 @@ fun ColorPickerDialog(
                             }
                         },
                         singleLine = true,
-                        label = { Text("Hex") },
+                        label = { Text(stringResource(R.string.color_hex)) },
                         modifier = Modifier.weight(1f),
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(current) }) { Text("Apply") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onConfirm(current) }) { Text(stringResource(R.string.common_apply)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
 

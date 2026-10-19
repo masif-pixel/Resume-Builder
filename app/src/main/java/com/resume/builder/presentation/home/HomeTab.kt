@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -115,6 +116,7 @@ fun HomeTab(
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val resumes by viewModel.resumeList.collectAsStateWithLifecycle()
     val thumbnails by viewModel.thumbnails.collectAsStateWithLifecycle()
     val importing by viewModel.importing.collectAsStateWithLifecycle()
@@ -135,13 +137,13 @@ fun HomeTab(
         viewModel.events.collect { event ->
             when (event) {
                 is HomeEvent.OpenEditor -> actions.openEditor(event.resumeId)
-                is HomeEvent.Message -> snackbar.showSnackbar(event.text)
+                is HomeEvent.Message -> snackbar.showSnackbar(event.text.resolve(context))
                 is HomeEvent.Deleted -> {
-                    val result = snackbar.showSnackbar("“${event.resume.title}” deleted", actionLabel = "Undo", duration = SnackbarDuration.Long)
+                    val result = snackbar.showSnackbar(resources.getString(R.string.home_deleted, event.resume.title), actionLabel = resources.getString(R.string.common_undo), duration = SnackbarDuration.Long)
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.resume)
                 }
                 is HomeEvent.Exported -> {
-                    val result = snackbar.showSnackbar("PDF saved · ${event.file.name}", actionLabel = "Open", duration = SnackbarDuration.Long)
+                    val result = snackbar.showSnackbar(resources.getString(R.string.pdf_saved_named, event.file.name), actionLabel = resources.getString(R.string.common_open), duration = SnackbarDuration.Long)
                     if (result == SnackbarResult.ActionPerformed) openFile(event.file.path, event.file.mimeType, event.file.name)
                 }
             }
@@ -152,9 +154,9 @@ fun HomeTab(
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.app_name),
-                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, "Menu") } },
+                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, stringResource(R.string.common_menu)) } },
                 actions = {
-                    IconButton(onClick = actions.openPdfTools) { Icon(Icons.Rounded.PictureAsPdf, "PDF tools") }
+                    IconButton(onClick = actions.openPdfTools) { Icon(Icons.Rounded.PictureAsPdf, stringResource(R.string.drawer_pdf_tools)) }
                 },
             )
         },
@@ -168,11 +170,11 @@ fun HomeTab(
             item {
                 Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
                     Text(
-                        "Welcome 👋",
+                        stringResource(R.string.home_welcome),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text("Let's build your next big move", style = MaterialTheme.typography.headlineMedium)
+                    Text(stringResource(R.string.home_headline), style = MaterialTheme.typography.headlineMedium)
                 }
             }
             item { HeroCard(onClick = { showCreate = true }) }
@@ -180,18 +182,18 @@ fun HomeTab(
                 // Intrinsic height keeps both cards equally tall when one subtitle wraps.
                 Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     QuickAction(
-                        title = "Import resume", subtitle = "From an existing PDF", icon = Icons.Rounded.UploadFile, tint = Teal,
+                        title = stringResource(R.string.home_import_title), subtitle = stringResource(R.string.home_import_subtitle), icon = Icons.Rounded.UploadFile, tint = Teal,
                         modifier = Modifier.weight(1f).fillMaxHeight(), onClick = { showImport = true },
                     )
                     QuickAction(
-                        title = "AI resume", subtitle = "Write it for me", icon = Icons.Rounded.AutoAwesome, tint = Violet,
+                        title = stringResource(R.string.drawer_ai_resume), subtitle = stringResource(R.string.home_ai_subtitle), icon = Icons.Rounded.AutoAwesome, tint = Violet,
                         modifier = Modifier.weight(1f).fillMaxHeight(), onClick = actions.openAiResume,
                     )
                 }
             }
             item {
                 QuickAction(
-                    title = "Browse templates", subtitle = "${TemplateCatalog.all.size} layouts · pick a look first", icon = Icons.Rounded.Dashboard,
+                    title = stringResource(R.string.home_templates_title), subtitle = stringResource(R.string.home_templates_subtitle, TemplateCatalog.all.size), icon = Icons.Rounded.Dashboard,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth(), onClick = { actions.openTemplatePicker(null) },
                     horizontal = true,
                 )
@@ -203,15 +205,15 @@ fun HomeTab(
                 }
                 list.isEmpty() -> item {
                     EmptyState(
-                        title = "No resumes yet",
-                        message = "Start from scratch, import a PDF or let AI draft one for you. Everything saves automatically.",
+                        title = stringResource(R.string.home_empty_title),
+                        message = stringResource(R.string.home_empty_message),
                         illustration = { ResumeStackIllustration() },
                     )
                 }
                 else -> {
                     item {
                         Text(
-                            "My resumes · ${list.size}",
+                            stringResource(R.string.home_my_resumes, list.size),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(top = 8.dp, start = 4.dp),
                         )
@@ -238,8 +240,8 @@ fun HomeTab(
 
     if (showCreate) {
         CreateResumeDialog(
-            label = "e.g. Android Developer",
-            supporting = "Use the role you're targeting — you can rename it anytime.",
+            label = stringResource(R.string.create_resume_hint),
+            supporting = stringResource(R.string.create_resume_supporting),
             onConfirm = { title, language -> showCreate = false; viewModel.create(title, language) },
             onDismiss = { showCreate = false },
         )
@@ -249,16 +251,16 @@ fun HomeTab(
     }
     if (importing) {
         LoadingDialog(
-            title = "Reading your resume",
-            message = "Extracting your details and sections…",
+            title = stringResource(R.string.import_reading_title),
+            message = stringResource(R.string.import_reading_message),
             onCancel = viewModel::cancelImport,
             visual = { AiOrb(size = 120.dp) },
         )
     }
     renaming?.let { resume ->
         TextInputDialog(
-            title = "Rename resume",
-            label = "Resume name",
+            title = stringResource(R.string.rename_resume_title),
+            label = stringResource(R.string.rename_resume_label),
             initial = resume.title,
             onConfirm = { renaming = null; viewModel.rename(resume, it) },
             onDismiss = { renaming = null },
@@ -266,9 +268,9 @@ fun HomeTab(
     }
     deleting?.let { resume ->
         ConfirmDialog(
-            title = "Delete resume?",
-            message = "“${resume.title}” will be removed from this device.",
-            confirmText = "Delete",
+            title = stringResource(R.string.delete_resume_title),
+            message = stringResource(R.string.home_delete_message, resume.title),
+            confirmText = stringResource(R.string.common_delete),
             destructive = true,
             onConfirm = { deleting = null; viewModel.delete(resume) },
             onDismiss = { deleting = null },
@@ -298,9 +300,9 @@ private fun HeroCard(onClick: () -> Unit) {
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("Create resume", style = MaterialTheme.typography.headlineSmall.cardSize(), color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.home_create_title), style = MaterialTheme.typography.headlineSmall.cardSize(), color = Color.White, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(4.dp))
-                Text("Start from scratch with guided sections", style = MaterialTheme.typography.bodyMedium.cardSize(), color = Color.White.copy(alpha = 0.85f))
+                Text(stringResource(R.string.home_create_subtitle), style = MaterialTheme.typography.bodyMedium.cardSize(), color = Color.White.copy(alpha = 0.85f))
             }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.size(40.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
@@ -400,7 +402,7 @@ private fun ResumeCard(
                 contentAlignment = Alignment.Center,
             ) {
                 if (thumbnail != null) {
-                    Image(thumbnail.asImageBitmap(), contentDescription = "Resume preview", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    Image(thumbnail.asImageBitmap(), contentDescription = stringResource(R.string.resume_preview), contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 } else {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 }
@@ -411,19 +413,19 @@ private fun ResumeCard(
                     Column(Modifier.weight(1f)) {
                         Text(resume.title, style = MaterialTheme.typography.titleMedium.cardSize(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            "Edited ${formatModified(resume.updatedAt)}",
+                            stringResource(R.string.edited_at, formatModified(resume.updatedAt)),
                             style = MaterialTheme.typography.bodySmall.cardSize(),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Box {
-                        IconButton(onClick = { menu = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Rounded.MoreVert, "More") }
+                        IconButton(onClick = { menu = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            MenuItem("Rename", Icons.Rounded.DriveFileRenameOutline) { menu = false; onRename() }
-                            MenuItem("Duplicate", Icons.Rounded.ContentCopy) { menu = false; onDuplicate() }
-                            MenuItem("Change template", Icons.Rounded.Dashboard) { menu = false; onTemplate() }
-                            MenuItem("Download PDF", Icons.Rounded.Download) { menu = false; onDownload() }
-                            MenuItem("Delete", Icons.Rounded.Delete, destructive = true) { menu = false; onDelete() }
+                            MenuItem(stringResource(R.string.common_rename), Icons.Rounded.DriveFileRenameOutline) { menu = false; onRename() }
+                            MenuItem(stringResource(R.string.common_duplicate), Icons.Rounded.ContentCopy) { menu = false; onDuplicate() }
+                            MenuItem(stringResource(R.string.change_template), Icons.Rounded.Dashboard) { menu = false; onTemplate() }
+                            MenuItem(stringResource(R.string.download_pdf), Icons.Rounded.Download) { menu = false; onDownload() }
+                            MenuItem(stringResource(R.string.common_delete), Icons.Rounded.Delete, destructive = true) { menu = false; onDelete() }
                         }
                     }
                 }
@@ -449,7 +451,7 @@ private fun ResumeCard(
                         drawStopIndicator = {},
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("$strength%", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.percent, strength), style = MaterialTheme.typography.labelMedium)
                 }
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -460,12 +462,12 @@ private fun ResumeCard(
                             Icon(Icons.Rounded.Visibility, null, Modifier.size(16.dp))
                         }
                         Spacer(Modifier.width(6.dp))
-                        Text("Preview")
+                        Text(stringResource(R.string.common_preview))
                     }
                     OutlinedButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 14.dp), modifier = Modifier.height(38.dp)) {
                         Icon(Icons.Rounded.Edit, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Edit")
+                        Text(stringResource(R.string.common_edit))
                     }
                 }
             }
@@ -484,7 +486,7 @@ private fun ImportDialog(onPick: () -> Unit, onDismiss: () -> Unit) {
     val outline = MaterialTheme.colorScheme.primary
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Import existing resume") },
+        title = { Text(stringResource(R.string.import_dialog_title)) },
         text = {
             Column {
                 Box(
@@ -503,17 +505,17 @@ private fun ImportDialog(onPick: () -> Unit, onDismiss: () -> Unit) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Rounded.UploadFile, null, tint = outline, modifier = Modifier.size(40.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("Tap to choose a PDF", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.import_dialog_pick), style = MaterialTheme.typography.titleSmall)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "PDF up to 5 MB. Text is extracted on-device — review sections after import.",
+                    stringResource(R.string.import_dialog_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }

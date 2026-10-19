@@ -8,10 +8,13 @@ import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Draw
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.MergeType
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.R
+import com.resume.builder.presentation.components.UiText
 import com.resume.builder.data.pdf.CompressionLevel
 import com.resume.builder.data.pdf.ImageFormat
 import com.resume.builder.data.pdf.ImageQuality
@@ -35,15 +38,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-enum class PdfTool(val title: String, val subtitle: String, val icon: ImageVector, val color: Color) {
-    MERGE("Merge PDF", "Combine photos and PDFs into one document", Icons.Rounded.MergeType, Color(0xFF4F46E5)),
-    COMPRESS("Compress PDF", "Shrink file size for easy email & upload", Icons.Rounded.Compress, Color(0xFF0D9488)),
-    SPLIT("Split PDF", "Extract the pages you need", Icons.Rounded.ContentCut, Color(0xFFEA580C)),
-    SIGN("Sign PDF", "Draw your signature and place it on a page", Icons.Rounded.Draw, Color(0xFF7C3AED)),
-    TO_IMAGES("PDF to images", "Save pages as JPG or PNG to your gallery", Icons.Rounded.Image, Color(0xFFDB2777)),
+enum class PdfTool(@StringRes val title: Int, @StringRes val subtitle: Int, val icon: ImageVector, val color: Color) {
+    MERGE(R.string.tool_merge, R.string.tool_merge_desc, Icons.Rounded.MergeType, Color(0xFF4F46E5)),
+    COMPRESS(R.string.tool_compress, R.string.tool_compress_desc, Icons.Rounded.Compress, Color(0xFF0D9488)),
+    SPLIT(R.string.tool_split, R.string.tool_split_desc, Icons.Rounded.ContentCut, Color(0xFFEA580C)),
+    SIGN(R.string.tool_sign, R.string.tool_sign_desc, Icons.Rounded.Draw, Color(0xFF7C3AED)),
+    TO_IMAGES(R.string.tool_to_images, R.string.tool_to_images_desc, Icons.Rounded.Image, Color(0xFFDB2777)),
 }
 
-data class ToolResult(val files: List<SavedFile>, val headline: String, val detail: String? = null)
+data class ToolResult(val files: List<SavedFile>, val headline: UiText, val detail: UiText? = null)
 
 data class PdfToolState(
     val mergeItems: List<PickedFile> = emptyList(),
@@ -74,7 +77,7 @@ class PdfToolViewModel(
     private val _state = MutableStateFlow(PdfToolState())
     val state: StateFlow<PdfToolState> = _state.asStateFlow()
 
-    private val _messages = Channel<String>(Channel.BUFFERED)
+    private val _messages = Channel<UiText>(Channel.BUFFERED)
     val messages = _messages.receiveAsFlow()
 
     private var thumbnailJob: Job? = null
@@ -84,7 +87,7 @@ class PdfToolViewModel(
     private inline fun work(crossinline block: suspend () -> Unit) {
         viewModelScope.launch {
             _state.update { it.copy(working = true) }
-            runCatching { block() }.onFailure { _messages.send(it.message ?: "Something went wrong") }
+            runCatching { block() }.onFailure { _messages.send(UiText.Res(R.string.error_generic)) }
             _state.update { it.copy(working = false) }
         }
     }
@@ -111,7 +114,7 @@ class PdfToolViewModel(
         val output = engine.newOutputFile()
         val pages = engine.merge(s.mergeItems, s.pageSize, s.orientation, s.marginMm, output)
         val saved = savedFiles.register(output, "merged_${stamp()}.pdf", PDF, FileCategory.PDF_TOOLS)
-        _state.update { it.copy(result = ToolResult(listOf(saved), "PDF merged", "${s.mergeItems.size} files · $pages pages combined into one PDF")) }
+        _state.update { it.copy(result = ToolResult(listOf(saved), UiText.Res(R.string.result_merged), UiText.Res(R.string.result_merged_detail, s.mergeItems.size, pages))) }
     }
     // endregion
 
@@ -158,8 +161,8 @@ class PdfToolViewModel(
             it.copy(
                 result = ToolResult(
                     listOf(saved),
-                    if (change > 0) "Reduced by $change%" else "Compression complete",
-                    "${formatSize(before)} → ${formatSize(after)}" + if (change <= 0) " · this PDF was already well optimised" else "",
+                    if (change > 0) UiText.Res(R.string.result_reduced, change.toInt()) else UiText.Res(R.string.result_compressed),
+                    UiText.Res(if (change <= 0) R.string.result_sizes_optimised else R.string.result_sizes, formatSize(before), formatSize(after)),
                 ),
             )
         }
@@ -172,7 +175,7 @@ class PdfToolViewModel(
         engine.extractPages(pdf.file, s.selectedPages.toList(), output)
         val base = pdf.name.substringBeforeLast('.')
         val saved = savedFiles.register(output, "${base}_pages.pdf", PDF, FileCategory.PDF_TOOLS)
-        _state.update { it.copy(result = ToolResult(listOf(saved), "Pages extracted", "${s.selectedPages.size} of ${pdf.pageCount} pages saved as a new PDF")) }
+        _state.update { it.copy(result = ToolResult(listOf(saved), UiText.Res(R.string.result_extracted), UiText.Res(R.string.result_extracted_detail, s.selectedPages.size, pdf.pageCount))) }
     }
 
     fun setImageFormat(format: ImageFormat) = _state.update { it.copy(imageFormat = format) }
@@ -187,7 +190,7 @@ class PdfToolViewModel(
         val saved = files.mapIndexed { i, file ->
             savedFiles.register(file, "${base}_page${sortedPages[i] + 1}.${s.imageFormat.extension}", s.imageFormat.mime, FileCategory.IMAGES)
         }
-        _state.update { it.copy(result = ToolResult(saved, "${saved.size} ${if (saved.size == 1) "image" else "images"} saved", "Find them in Pictures › Resume Builder and in Saved files")) }
+        _state.update { it.copy(result = ToolResult(saved, UiText.Plural(R.plurals.result_images_saved, saved.size, saved.size), UiText.Res(R.string.result_images_detail))) }
     }
 
     fun setSignPage(index: Int) = _state.update { it.copy(signPage = index) }
@@ -203,7 +206,7 @@ class PdfToolViewModel(
         engine.sign(pdf.file, pdf.pageCount, s.signPage, signature, s.signX, s.signY, s.signWidth, output)
         val base = pdf.name.substringBeforeLast('.')
         val saved = savedFiles.register(output, "${base}_signed.pdf", PDF, FileCategory.PDF_TOOLS)
-        _state.update { it.copy(result = ToolResult(listOf(saved), "PDF signed", "Signature added to page ${s.signPage + 1}")) }
+        _state.update { it.copy(result = ToolResult(listOf(saved), UiText.Res(R.string.result_signed), UiText.Res(R.string.result_signed_detail, s.signPage + 1))) }
     }
     // endregion
 

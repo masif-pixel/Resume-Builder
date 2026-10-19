@@ -4,7 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.R
 import com.resume.builder.data.pdf.PdfToolsEngine
+import com.resume.builder.data.remote.ai.NoPdfTextException
 import com.resume.builder.domain.model.Resume
 import com.resume.builder.domain.model.ResumeLanguage
 import com.resume.builder.domain.model.SavedFile
@@ -14,6 +16,7 @@ import com.resume.builder.domain.usecase.DeleteResumeUseCase
 import com.resume.builder.domain.usecase.DocumentExporter
 import com.resume.builder.domain.usecase.DuplicateResumeUseCase
 import com.resume.builder.domain.usecase.ImportResumeUseCase
+import com.resume.builder.presentation.components.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,7 @@ import kotlinx.coroutines.launch
 
 sealed interface HomeEvent {
     data class OpenEditor(val resumeId: String) : HomeEvent
-    data class Message(val text: String) : HomeEvent
+    data class Message(val text: UiText) : HomeEvent
     data class Deleted(val resume: Resume) : HomeEvent
     data class Exported(val file: SavedFile) : HomeEvent
 }
@@ -86,7 +89,7 @@ class HomeViewModel(
 
     fun duplicate(resume: Resume) = viewModelScope.launch {
         duplicateResume(resume)
-        _events.send(HomeEvent.Message("Duplicated “${resume.title}”"))
+        _events.send(HomeEvent.Message(UiText.Res(R.string.home_duplicated, resume.title)))
     }
 
     fun delete(resume: Resume) = viewModelScope.launch {
@@ -102,7 +105,7 @@ class HomeViewModel(
         _busyResumeId.value = resume.id
         runCatching { exporter.exportResume(resume) }
             .onSuccess { _events.send(HomeEvent.Exported(it)) }
-            .onFailure { _events.send(HomeEvent.Message("Couldn't create PDF: ${it.message}")) }
+            .onFailure { _events.send(HomeEvent.Message(UiText.Res(R.string.error_create_pdf, it.message.orEmpty()))) }
         _busyResumeId.value = null
     }
 
@@ -110,13 +113,13 @@ class HomeViewModel(
         importJob = viewModelScope.launch {
             val picked = runCatching { tools.describe(uri) }.getOrNull()
             if (picked != null && picked.sizeBytes > MAX_IMPORT_BYTES) {
-                _events.send(HomeEvent.Message("Please pick a PDF smaller than 5 MB"))
+                _events.send(HomeEvent.Message(UiText.Res(R.string.import_too_large)))
                 return@launch
             }
             _importing.value = true
             importResume(uri)
                 .onSuccess { _events.send(HomeEvent.OpenEditor(it.id)) }
-                .onFailure { _events.send(HomeEvent.Message(it.message ?: "Couldn't read that resume")) }
+                .onFailure { _events.send(HomeEvent.Message(if (it is NoPdfTextException) UiText.Res(R.string.import_no_text) else UiText.Res(R.string.import_failed))) }
             _importing.value = false
         }
     }

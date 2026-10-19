@@ -1,5 +1,8 @@
 package com.resume.builder.presentation.editor
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -78,6 +81,7 @@ import com.resume.builder.presentation.components.ConfirmDialog
 import com.resume.builder.presentation.components.GradientButton
 import com.resume.builder.presentation.components.ResumeLanguageDialog
 import com.resume.builder.presentation.components.TextInputDialog
+import com.resume.builder.presentation.components.displayName
 import com.resume.builder.ui.theme.Success
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -105,19 +109,19 @@ fun ResumeEditorScreen(
         topBar = {
             AppTopBar(
                 title = resume?.title ?: "",
-                subtitle = "Tap to edit · drag to reorder",
+                subtitle = stringResource(R.string.editor_subtitle),
                 onBack = onBack,
                 actions = {
-                    IconButton(onClick = { choosingLanguage = true }) { Icon(Icons.Rounded.Translate, "Resume language") }
-                    IconButton(onClick = { renaming = true }) { Icon(Icons.Rounded.Edit, "Rename resume") }
-                    IconButton(onClick = { showManage = true }) { Icon(Icons.Rounded.Tune, "Show or hide sections") }
+                    IconButton(onClick = { choosingLanguage = true }) { Icon(Icons.Rounded.Translate, stringResource(R.string.resume_language_title)) }
+                    IconButton(onClick = { renaming = true }) { Icon(Icons.Rounded.Edit, stringResource(R.string.rename_resume_title)) }
+                    IconButton(onClick = { showManage = true }) { Icon(Icons.Rounded.Tune, stringResource(R.string.editor_manage_sections_desc)) }
                 },
             )
         },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 GradientButton(
-                    text = "Preview & download",
+                    text = stringResource(R.string.editor_preview_download),
                     icon = Icons.Rounded.Visibility,
                     onClick = onPreview,
                     modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp),
@@ -166,7 +170,7 @@ fun ResumeEditorScreen(
                                     onDragStarted = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
                                     onDragStopped = { haptics.performHapticFeedback(HapticFeedbackType.GestureEnd) },
                                 ),
-                            ) { Icon(Icons.Rounded.DragHandle, "Reorder", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            ) { Icon(Icons.Rounded.DragHandle, stringResource(R.string.editor_reorder), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                         },
                     )
                 }
@@ -176,13 +180,13 @@ fun ResumeEditorScreen(
                     OutlinedButton(onClick = { showCustom = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(18.dp)) {
                         Icon(Icons.Rounded.Add, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Add custom section")
+                        Text(stringResource(R.string.editor_add_custom))
                     }
                     OutlinedButton(onClick = { showManage = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(18.dp)) {
                         Icon(Icons.Rounded.Tune, null)
                         Spacer(Modifier.width(8.dp))
                         val hidden = current.content.sections.count { !it.visible }
-                        Text(if (hidden > 0) "Show / hide sections · $hidden hidden" else "Show / hide sections")
+                        Text(if (hidden > 0) stringResource(R.string.editor_show_hide_hidden, hidden) else stringResource(R.string.editor_show_hide))
                     }
                 }
             }
@@ -204,13 +208,13 @@ fun ResumeEditorScreen(
         )
     }
     if (renaming && current != null) {
-        TextInputDialog(title = "Rename resume", label = "Resume name", initial = current.title, onConfirm = { renaming = false; viewModel.rename(it) }, onDismiss = { renaming = false })
+        TextInputDialog(title = stringResource(R.string.rename_resume_title), label = stringResource(R.string.rename_resume_label), initial = current.title, onConfirm = { renaming = false; viewModel.rename(it) }, onDismiss = { renaming = false })
     }
     deletingSection?.let { section ->
         ConfirmDialog(
-            title = "Delete section?",
-            message = "“${section.title}” and its ${section.items.size} entries will be removed.",
-            confirmText = "Delete",
+            title = stringResource(R.string.delete_section_title),
+            message = pluralStringResource(R.plurals.editor_delete_section_message, section.items.size, section.title, section.items.size),
+            confirmText = stringResource(R.string.common_delete),
             destructive = true,
             onConfirm = { deletingSection = null; viewModel.deleteSection(section.id) },
             onDismiss = { deletingSection = null },
@@ -244,21 +248,21 @@ private fun StrengthCard(resume: Resume) {
             Column(Modifier.weight(1f)) {
                 Text(
                     when {
-                        strength >= 85 -> "Excellent resume"
-                        strength >= 65 -> "Strong resume"
-                        strength >= 40 -> "Getting there"
-                        else -> "Let's build it up"
+                        strength >= 85 -> stringResource(R.string.strength_excellent)
+                        strength >= 65 -> stringResource(R.string.strength_strong)
+                        strength >= 40 -> stringResource(R.string.strength_getting_there)
+                        else -> stringResource(R.string.strength_build_up)
                     },
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (tips.isEmpty()) {
-                    Text("You're ready to download and apply.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.strength_ready), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     tips.take(2).forEach { tip ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
                             Icon(Icons.Rounded.TipsAndUpdates, null, tint = color, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(tip, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(tip), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -267,15 +271,16 @@ private fun StrengthCard(resume: Resume) {
     }
 }
 
-private fun improvementTips(resume: Resume): List<String> {
+/** String resources of the most useful next steps. */
+private fun improvementTips(resume: Resume): List<Int> {
     val c = resume.content
     return buildList {
-        if (c.contact.fullName.isBlank()) add("Add your name and contact details")
-        if (c.summary.length < 120) add("Write a 3–4 sentence summary")
-        if (c.section(SectionType.EXPERIENCE)?.items.isNullOrEmpty()) add("Add your work experience")
-        if ((c.section(SectionType.SKILLS)?.items?.size ?: 0) < 6) add("List at least 6 key skills")
-        if (c.section(SectionType.EDUCATION)?.items.isNullOrEmpty()) add("Add your education")
-        if (c.contact.linkedin.isBlank()) add("Link your LinkedIn profile")
+        if (c.contact.fullName.isBlank()) add(R.string.tip_add_contact)
+        if (c.summary.length < 120) add(R.string.tip_write_summary)
+        if (c.section(SectionType.EXPERIENCE)?.items.isNullOrEmpty()) add(R.string.tip_add_experience)
+        if ((c.section(SectionType.SKILLS)?.items?.size ?: 0) < 6) add(R.string.tip_add_skills)
+        if (c.section(SectionType.EDUCATION)?.items.isNullOrEmpty()) add(R.string.tip_add_education)
+        if (c.contact.linkedin.isBlank()) add(R.string.tip_add_linkedin)
     }
 }
 
@@ -307,20 +312,20 @@ private fun SectionRow(
                 Text(resume.style.language.headingFor(section), style = MaterialTheme.typography.titleMedium)
                 Text(
                     when {
-                        section.type.isListSection && section.items.isNotEmpty() -> "${section.items.size} ${if (section.items.size == 1) "entry" else "entries"}"
-                        complete -> "Completed"
-                        section.type == SectionType.SIGNATURE -> "Optional"
-                        else -> "Tap to add"
+                        section.type.isListSection && section.items.isNotEmpty() -> pluralStringResource(R.plurals.entries_count, section.items.size, section.items.size)
+                        complete -> stringResource(R.string.section_completed)
+                        section.type == SectionType.SIGNATURE -> stringResource(R.string.section_optional)
+                        else -> stringResource(R.string.section_tap_to_add)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (complete) Success else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (complete) {
-                Icon(Icons.Rounded.CheckCircle, "Complete", tint = Success, modifier = Modifier.size(22.dp))
+                Icon(Icons.Rounded.CheckCircle, stringResource(R.string.section_complete_desc), tint = Success, modifier = Modifier.size(22.dp))
             }
             if (onDelete != null) {
-                IconButton(onClick = onDelete) { Icon(Icons.Rounded.DeleteOutline, "Delete section", tint = MaterialTheme.colorScheme.error) }
+                IconButton(onClick = onDelete) { Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.delete_section_desc), tint = MaterialTheme.colorScheme.error) }
             }
             handle()
         }
@@ -331,14 +336,14 @@ private fun SectionRow(
 private fun ManageSectionsDialog(sections: List<ResumeSection>, language: ResumeLanguage, onToggle: (String, Boolean) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Manage sections") },
+        title = { Text(stringResource(R.string.manage_sections_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Info, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(10.dp))
-                        Text("Hidden sections keep their content but won't appear on your resume.", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.manage_sections_note), style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -355,7 +360,7 @@ private fun ManageSectionsDialog(sections: List<ResumeSection>, language: Resume
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_done)) } },
     )
 }
 
@@ -365,12 +370,12 @@ private fun CustomSectionDialog(onConfirm: (String, CustomLayout) -> Unit, onDis
     var layout by remember { mutableStateOf(CustomLayout.TITLE_DESCRIPTION) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create custom section") },
+        title = { Text(stringResource(R.string.custom_section_title)) },
         text = {
             Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Section name") }, placeholder = { Text("e.g. Volunteering") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text(stringResource(R.string.custom_section_name)) }, placeholder = { Text(stringResource(R.string.custom_section_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(16.dp))
-                Text("Entry layout", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.custom_section_layout), style = MaterialTheme.typography.titleSmall)
                 CustomLayout.entries.forEach { option ->
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
@@ -380,12 +385,12 @@ private fun CustomSectionDialog(onConfirm: (String, CustomLayout) -> Unit, onDis
                     ) {
                         RadioButton(selected = layout == option, onClick = null)
                         Spacer(Modifier.width(10.dp))
-                        Text(option.label)
+                        Text(option.displayName())
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(name.trim(), layout) }, enabled = name.isNotBlank()) { Text("Create") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onConfirm(name.trim(), layout) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.common_create)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }

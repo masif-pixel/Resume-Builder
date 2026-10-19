@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.viewer
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
@@ -95,11 +97,11 @@ fun PdfViewerScreen(path: String, title: String, onBack: () -> Unit) {
                     Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleLarge)
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back)) }
                 },
                 actions = {
                     IconButton(onClick = { FileActions.share(context, path, "application/pdf", title) }) {
-                        Icon(Icons.Rounded.Share, contentDescription = "Share")
+                        Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.common_share))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
@@ -203,7 +205,7 @@ private fun PdfPage(source: PdfPageSource, index: Int, targetWidthPx: Int) {
     ) {
         val page = bitmap
         if (page != null) {
-            Image(page.asImageBitmap(), contentDescription = "Page ${index + 1}", contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+            Image(page.asImageBitmap(), contentDescription = stringResource(R.string.page_number, index + 1), contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
         } else {
             CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
         }
@@ -215,10 +217,10 @@ private fun ViewerError() {
     Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(Icons.Rounded.PictureAsPdf, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(56.dp))
         Spacer(Modifier.height(12.dp))
-        Text("Can't open this PDF", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.pdf_open_error_title), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(4.dp))
         Text(
-            "The file may have been moved, deleted or is damaged.",
+            stringResource(R.string.pdf_open_error_message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

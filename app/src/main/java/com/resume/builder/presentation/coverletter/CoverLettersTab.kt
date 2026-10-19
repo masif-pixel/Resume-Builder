@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.coverletter
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,6 +62,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -120,19 +124,21 @@ fun CoverLettersTab(
     var pickResumeFor by remember { mutableStateOf<String?>(null) }
     var deleting by remember { mutableStateOf<CoverLetter?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val resources = LocalResources.current
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Cover letters",
-                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, "Menu") } },
+                title = stringResource(R.string.cover_letters_title),
+                navigationIcon = { IconButton(onClick = onOpenDrawer) { Icon(Icons.Rounded.Menu, stringResource(R.string.common_menu)) } },
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showChooser = true },
                 icon = { Icon(Icons.Rounded.Add, null) },
-                text = { Text("New letter") },
+                text = { Text(stringResource(R.string.cover_new_letter)) },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             )
@@ -143,14 +149,14 @@ fun CoverLettersTab(
         if (list != null && list.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyState(
-                    title = "Stand out with a cover letter",
-                    message = "Generate one tailored to a job in seconds, using the details already in your resume.",
+                    title = stringResource(R.string.cover_empty_title),
+                    message = stringResource(R.string.cover_empty_message),
                     illustration = { LetterIllustration() },
                     action = {
                         Button(onClick = { showChooser = true }) {
                             Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Create cover letter")
+                            Text(stringResource(R.string.cover_create))
                         }
                     },
                 )
@@ -178,17 +184,17 @@ fun CoverLettersTab(
     if (showChooser) {
         ModalBottomSheet(onDismissRequest = { showChooser = false }) {
             Column(Modifier.padding(horizontal = 20.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
-                Text("New cover letter", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.cover_new_title), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
                 ChooserOption(
                     icon = Icons.Rounded.AutoAwesome,
-                    title = "Generate with AI",
-                    subtitle = "Tailored to a job description using your resume",
+                    title = stringResource(R.string.cover_generate_ai),
+                    subtitle = stringResource(R.string.cover_generate_ai_desc),
                     highlight = true,
                     onClick = {
                         showChooser = false
                         when {
-                            resumes.isEmpty() -> scope.launch { snackbar.showSnackbar("Create a resume first — the AI uses it as your source of truth") }
+                            resumes.isEmpty() -> scope.launch { snackbar.showSnackbar(resources.getString(R.string.cover_need_resume)) }
                             resumes.size == 1 -> actions.openCoverLetterGenerate(resumes.first().id)
                             else -> pickResumeFor = "ai"
                         }
@@ -197,8 +203,8 @@ fun CoverLettersTab(
                 Spacer(Modifier.height(10.dp))
                 ChooserOption(
                     icon = Icons.Rounded.EditNote,
-                    title = "Write it myself",
-                    subtitle = "Start from a clean, professional letter layout",
+                    title = stringResource(R.string.cover_write_myself),
+                    subtitle = stringResource(R.string.cover_write_myself_desc),
                     highlight = false,
                     onClick = {
                         showChooser = false
@@ -212,18 +218,18 @@ fun CoverLettersTab(
     pickResumeFor?.let { mode ->
         AlertDialog(
             onDismissRequest = { pickResumeFor = null },
-            title = { Text("Select resume") },
+            title = { Text(stringResource(R.string.cover_select_resume)) },
             text = {
                 Column {
                     Text(
-                        if (mode == "ai") "The letter will be tailored using this resume." else "Its contact details will appear in the letter header.",
+                        if (mode == "ai") stringResource(R.string.cover_pick_resume_ai) else stringResource(R.string.cover_pick_resume_manual),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(8.dp))
                     resumes.forEach { resume ->
                         ListItem(
                             headlineContent = { Text(resume.title) },
-                            supportingContent = { Text("Edited ${formatModified(resume.updatedAt)}") },
+                            supportingContent = { Text(stringResource(R.string.edited_at, formatModified(resume.updatedAt))) },
                             leadingContent = {
                                 Box(Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                                     Icon(Icons.Rounded.Person, null, tint = MaterialTheme.colorScheme.primary)
@@ -237,15 +243,15 @@ fun CoverLettersTab(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { pickResumeFor = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { pickResumeFor = null }) { Text(stringResource(R.string.common_cancel)) } },
         )
     }
 
     deleting?.let { letter ->
         ConfirmDialog(
-            title = "Delete cover letter?",
-            message = "“${letter.title}” will be permanently removed.",
-            confirmText = "Delete",
+            title = stringResource(R.string.cover_delete_title),
+            message = stringResource(R.string.cover_delete_message, letter.title),
+            confirmText = stringResource(R.string.common_delete),
             destructive = true,
             onConfirm = { deleting = null; viewModel.delete(letter) },
             onDismiss = { deleting = null },
@@ -305,14 +311,14 @@ private fun LetterCard(
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(letter.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("Edited ${formatModified(letter.updatedAt)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.edited_at, formatModified(letter.updatedAt)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Duplicate") }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menu = false; onDuplicate() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.common_duplicate)) }, leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }, onClick = { menu = false; onDuplicate() })
                         DropdownMenuItem(
-                            text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) },
                             leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) },
                             onClick = { menu = false; onDelete() },
                         )
@@ -332,12 +338,12 @@ private fun LetterCard(
                 Button(onClick = onView, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(38.dp)) {
                     Icon(Icons.Rounded.Visibility, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("View")
+                    Text(stringResource(R.string.common_view))
                 }
                 OutlinedButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.height(38.dp)) {
                     Icon(Icons.Rounded.Edit, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Edit")
+                    Text(stringResource(R.string.common_edit))
                 }
             }
         }

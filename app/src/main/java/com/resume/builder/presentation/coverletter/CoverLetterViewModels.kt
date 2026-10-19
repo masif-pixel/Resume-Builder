@@ -3,6 +3,8 @@ package com.resume.builder.presentation.coverletter
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.R
+import com.resume.builder.presentation.components.UiText
 import com.resume.builder.domain.model.CoverLetter
 import com.resume.builder.domain.model.CoverLetterLength
 import com.resume.builder.domain.model.CoverLetterRequest
@@ -47,7 +49,7 @@ sealed interface CoverLetterEvent {
     data class Generated(val letterId: String) : CoverLetterEvent
     data class Saved(val letterId: String, val thenPreview: Boolean) : CoverLetterEvent
     data class Exported(val file: SavedFile) : CoverLetterEvent
-    data class Message(val text: String) : CoverLetterEvent
+    data class Message(val text: UiText) : CoverLetterEvent
 }
 
 class CoverLetterGenerateViewModel(
@@ -92,7 +94,7 @@ class CoverLetterGenerateViewModel(
                     instructions = form.instructions,
                 ),
             ).onSuccess { _events.send(CoverLetterEvent.Generated(it.id)) }
-                .onFailure { _events.send(CoverLetterEvent.Message(it.message ?: "Generation failed")) }
+                .onFailure { _events.send(CoverLetterEvent.Message(UiText.Res(R.string.error_generation_failed))) }
             _generating.value = false
         }
     }
@@ -170,7 +172,7 @@ class CoverLetterEditorViewModel(
             _aiBusy.value = true
             ai.improveText(value.body, ImproveKind.COVER_LETTER, listOf(value.jobTitle, value.companyName).filter { it.isNotBlank() }.joinToString(" at "))
                 .onSuccess { body -> update { it.copy(body = body) } }
-                .onFailure { _events.send(CoverLetterEvent.Message(it.message ?: "AI request failed")) }
+                .onFailure { _events.send(CoverLetterEvent.Message(UiText.Res(R.string.error_ai_failed))) }
             _aiBusy.value = false
         }
     }
@@ -214,7 +216,7 @@ class CoverLetterPreviewViewModel(
             _exporting.value = true
             runCatching { exporter.exportCoverLetter(value, resume) }
                 .onSuccess { _events.send(CoverLetterEvent.Exported(it)) }
-                .onFailure { _events.send(CoverLetterEvent.Message("Couldn't save PDF: ${it.message}")) }
+                .onFailure { _events.send(CoverLetterEvent.Message(UiText.Res(R.string.error_save_pdf, it.message.orEmpty()))) }
             _exporting.value = false
         }
     }

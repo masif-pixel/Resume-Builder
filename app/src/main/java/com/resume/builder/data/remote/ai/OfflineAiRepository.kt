@@ -8,6 +8,9 @@ import com.resume.builder.domain.model.ImproveKind
 import com.resume.builder.domain.model.ResumeContent
 import com.resume.builder.domain.repository.AiRepository
 
+/** Thrown when an imported PDF has no selectable text (e.g. a scan). */
+class NoPdfTextException : IllegalArgumentException("No selectable text found in this PDF")
+
 /** Writing assistant that runs entirely on-device, with no AI model or network calls. */
 class OfflineAiRepository(private val textExtractor: PdfTextExtractor) : AiRepository {
 
@@ -16,7 +19,7 @@ class OfflineAiRepository(private val textExtractor: PdfTextExtractor) : AiRepos
 
     override suspend fun parseResumePdf(pdf: Uri): Result<Pair<String, ResumeContent>> = runCatching {
         val text = textExtractor.extractText(pdf)
-        require(text.isNotBlank()) { "No selectable text found in this PDF" }
+        if (text.isBlank()) throw NoPdfTextException()
         ResumeTextParser.parse(text)
     }
 

@@ -1,5 +1,6 @@
 package com.resume.builder
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pixelforge.ads.AdsSdk
 import com.pixelforge.ads.appopen.AppOpenAdManager
+import com.resume.builder.core.locale.AppLocale
 import com.resume.builder.presentation.main.AppViewModel
 import com.resume.builder.presentation.navigation.AppNavHost
 import com.resume.builder.ui.theme.ResumeBuilderTheme
@@ -19,6 +21,10 @@ class MainActivity : ComponentActivity() {
 
     private val appViewModel: AppViewModel by viewModel()
     private val adsSdk: AdsSdk by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()

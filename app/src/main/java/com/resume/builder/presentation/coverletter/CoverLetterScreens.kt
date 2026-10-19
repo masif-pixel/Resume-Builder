@@ -1,5 +1,7 @@
 package com.resume.builder.presentation.coverletter
 
+import androidx.compose.ui.res.stringResource
+import com.resume.builder.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +45,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -56,6 +60,7 @@ import com.resume.builder.presentation.components.AppTopBar
 import com.resume.builder.presentation.components.ChoiceChips
 import com.resume.builder.presentation.components.ConfirmDialog
 import com.resume.builder.presentation.components.DropdownField
+import com.resume.builder.presentation.components.displayName
 import com.resume.builder.presentation.components.ExportedDialog
 import com.resume.builder.presentation.components.FormCard
 import com.resume.builder.presentation.components.GradientButton
@@ -76,23 +81,25 @@ fun CoverLetterGenerateScreen(
     val generating by viewModel.generating.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is CoverLetterEvent.Generated -> onGenerated(event.letterId)
-                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text)
+                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text.resolve(context))
                 else -> Unit
             }
         }
     }
 
     Scaffold(
-        topBar = { AppTopBar(title = "AI cover letter", subtitle = resume?.let { "Based on “${it.title}”" }, onBack = onBack) },
+        topBar = { AppTopBar(title = stringResource(R.string.cover_ai_title), subtitle = resume?.let { stringResource(R.string.cover_based_on, it.title) }, onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 GradientButton(
-                    text = "Generate cover letter",
+                    text = stringResource(R.string.cover_generate),
                     icon = Icons.Rounded.AutoAwesome,
                     onClick = viewModel::generate,
                     enabled = form.canGenerate && resume != null,
@@ -105,66 +112,66 @@ fun CoverLetterGenerateScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            FormCard(title = "The role") {
+            FormCard(title = stringResource(R.string.cover_role)) {
                 OutlinedTextField(
-                    value = form.jobTitle, onValueChange = { v -> viewModel.update { it.copy(jobTitle = v) } }, label = { Text("Job title") },
+                    value = form.jobTitle, onValueChange = { v -> viewModel.update { it.copy(jobTitle = v) } }, label = { Text(stringResource(R.string.field_job_title)) },
                     singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
-                    value = form.companyName, onValueChange = { v -> viewModel.update { it.copy(companyName = v) } }, label = { Text("Company") },
+                    value = form.companyName, onValueChange = { v -> viewModel.update { it.copy(companyName = v) } }, label = { Text(stringResource(R.string.field_company)) },
                     singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
-                    value = form.hiringManager, onValueChange = { v -> viewModel.update { it.copy(hiringManager = v) } }, label = { Text("Hiring manager (optional)") },
+                    value = form.hiringManager, onValueChange = { v -> viewModel.update { it.copy(hiringManager = v) } }, label = { Text(stringResource(R.string.cover_hiring_manager)) },
                     singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 )
             }
-            FormCard(title = "Job description", subtitle = "Paste the posting — the more detail, the better the match") {
+            FormCard(title = stringResource(R.string.cover_job_description), subtitle = stringResource(R.string.cover_job_description_subtitle)) {
                 OutlinedTextField(
                     value = form.jobDescription,
                     onValueChange = { v -> if (v.length <= GenerateForm.MAX_DESCRIPTION) viewModel.update { it.copy(jobDescription = v) } },
-                    placeholder = { Text("Responsibilities, requirements, about the company…") },
+                    placeholder = { Text(stringResource(R.string.cover_job_description_placeholder)) },
                     minLines = 7,
                     shape = RoundedCornerShape(16.dp),
                     supportingText = {
                         val n = form.jobDescription.trim().length
                         Text(
-                            if (n < GenerateForm.MIN_DESCRIPTION) "At least ${GenerateForm.MIN_DESCRIPTION} characters · $n/${GenerateForm.MAX_DESCRIPTION}" else "$n/${GenerateForm.MAX_DESCRIPTION}",
+                            if (n < GenerateForm.MIN_DESCRIPTION) stringResource(R.string.ai_min_chars, GenerateForm.MIN_DESCRIPTION, n, GenerateForm.MAX_DESCRIPTION) else stringResource(R.string.char_count, n, GenerateForm.MAX_DESCRIPTION),
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            FormCard(title = "Style") {
+            FormCard(title = stringResource(R.string.cover_style)) {
                 DropdownField(
-                    label = "Language",
+                    label = stringResource(R.string.field_language),
                     options = ResumeLanguage.entries.map { it.label },
                     selected = form.language,
                     optionLabel = { it },
                     onSelect = { v -> viewModel.update { it.copy(language = v) } },
                 )
                 Spacer(Modifier.height(14.dp))
-                Text("Tone", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.cover_tone), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
-                ChoiceChips(options = CoverLetterTone.entries, selected = form.tone, label = { it.label }, onSelect = { v -> viewModel.update { it.copy(tone = v) } })
+                ChoiceChips(options = CoverLetterTone.entries, selected = form.tone, label = { it.displayName() }, onSelect = { v -> viewModel.update { it.copy(tone = v) } })
                 Spacer(Modifier.height(12.dp))
-                Text("Length", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.cover_length), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
-                ChoiceChips(options = CoverLetterLength.entries, selected = form.length, label = { "${it.label} · ${it.words} words" }, onSelect = { v -> viewModel.update { it.copy(length = v) } })
+                ChoiceChips(options = CoverLetterLength.entries, selected = form.length, label = { stringResource(R.string.cover_length_words, it.displayName(), it.words) }, onSelect = { v -> viewModel.update { it.copy(length = v) } })
             }
-            FormCard(title = "Additional instructions", subtitle = "Optional") {
+            FormCard(title = stringResource(R.string.cover_instructions), subtitle = stringResource(R.string.common_optional)) {
                 OutlinedTextField(
                     value = form.instructions,
                     onValueChange = { v -> if (v.length <= GenerateForm.MAX_INSTRUCTIONS) viewModel.update { it.copy(instructions = v) } },
-                    placeholder = { Text("e.g. Emphasise my leadership and the fintech project") },
+                    placeholder = { Text(stringResource(R.string.cover_instructions_placeholder)) },
                     minLines = 3,
                     shape = RoundedCornerShape(16.dp),
-                    supportingText = { Text("${form.instructions.length}/${GenerateForm.MAX_INSTRUCTIONS}") },
+                    supportingText = { Text(stringResource(R.string.char_count, form.instructions.length, GenerateForm.MAX_INSTRUCTIONS)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -173,7 +180,7 @@ fun CoverLetterGenerateScreen(
     }
 
     if (generating) {
-        LoadingDialog(title = "Writing your letter", message = "Matching your experience to the role…", onCancel = viewModel::cancel, visual = { AiOrb(size = 120.dp) })
+        LoadingDialog(title = stringResource(R.string.cover_loading_title), message = stringResource(R.string.cover_loading_message), onCancel = viewModel::cancel, visual = { AiOrb(size = 120.dp) })
     }
 }
 
@@ -191,11 +198,14 @@ fun CoverLetterEditorScreen(
     val snackbar = remember { SnackbarHostState() }
     var confirmLeave by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+
+    val resources = LocalResources.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is CoverLetterEvent.Saved -> if (event.thenPreview) onPreview(event.letterId) else snackbar.showSnackbar("Cover letter saved")
-                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text)
+                is CoverLetterEvent.Saved -> if (event.thenPreview) onPreview(event.letterId) else snackbar.showSnackbar(resources.getString(R.string.cover_letter_saved))
+                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text.resolve(context))
                 else -> Unit
             }
         }
@@ -205,16 +215,16 @@ fun CoverLetterEditorScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Edit cover letter",
+                title = stringResource(R.string.cover_edit_title),
                 onBack = { if (dirty) confirmLeave = true else onBack() },
                 actions = {
                     IconButton(onClick = viewModel::improve, enabled = !aiBusy) {
-                        if (aiBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Rounded.AutoAwesome, "Polish with AI")
+                        if (aiBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Rounded.AutoAwesome, stringResource(R.string.summary_ai_polish))
                     }
                     TextButton(onClick = { viewModel.save() }, enabled = dirty) {
                         Icon(Icons.Rounded.Save, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Save")
+                        Text(stringResource(R.string.common_save))
                     }
                 },
             )
@@ -223,7 +233,7 @@ fun CoverLetterEditorScreen(
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 GradientButton(
-                    text = "Save & preview PDF",
+                    text = stringResource(R.string.cover_save_preview),
                     icon = Icons.Rounded.Visibility,
                     onClick = { viewModel.save(thenPreview = true) },
                     enabled = letter != null,
@@ -242,21 +252,21 @@ fun CoverLetterEditorScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             OutlinedTextField(
-                value = current.title, onValueChange = { v -> viewModel.update { it.copy(title = v) } }, label = { Text("Letter name") },
+                value = current.title, onValueChange = { v -> viewModel.update { it.copy(title = v) } }, label = { Text(stringResource(R.string.cover_letter_name)) },
                 singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
-                value = current.companyName, onValueChange = { v -> viewModel.update { it.copy(companyName = v) } }, label = { Text("Company (shown above the letter)") },
+                value = current.companyName, onValueChange = { v -> viewModel.update { it.copy(companyName = v) } }, label = { Text(stringResource(R.string.cover_company_shown)) },
                 singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = current.body,
                 onValueChange = { v -> viewModel.update { it.copy(body = v) } },
-                label = { Text("Letter") },
+                label = { Text(stringResource(R.string.cover_letter_body)) },
                 minLines = 16,
                 shape = RoundedCornerShape(16.dp),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                supportingText = { Text("${current.body.split(Regex("\\s+")).count { it.isNotBlank() }} words · replace any [placeholders] before sending") },
+                supportingText = { Text(stringResource(R.string.cover_word_count, current.body.split(Regex("\\s+")).count { it.isNotBlank() })) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -264,9 +274,9 @@ fun CoverLetterEditorScreen(
 
     if (confirmLeave) {
         ConfirmDialog(
-            title = "Save changes?",
-            message = "You have unsaved edits to this cover letter.",
-            confirmText = "Save",
+            title = stringResource(R.string.save_changes_title),
+            message = stringResource(R.string.save_changes_message),
+            confirmText = stringResource(R.string.common_save),
             onConfirm = { confirmLeave = false; viewModel.save(); onBack() },
             onDismiss = { confirmLeave = false; onBack() },
         )
@@ -286,11 +296,13 @@ fun CoverLetterPreviewScreen(
     val snackbar = remember { SnackbarHostState() }
     var exported by remember { mutableStateOf<SavedFile?>(null) }
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is CoverLetterEvent.Exported -> exported = event.file
-                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text)
+                is CoverLetterEvent.Message -> snackbar.showSnackbar(event.text.resolve(context))
                 else -> Unit
             }
         }
@@ -298,13 +310,13 @@ fun CoverLetterPreviewScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = title.ifBlank { "Cover letter" },
+                title = title.ifBlank { stringResource(R.string.cover_letter) },
                 onBack = onBack,
                 actions = {
                     Button(onClick = viewModel::export, enabled = !exporting && pages.isNotEmpty(), contentPadding = PaddingValues(horizontal = 14.dp), modifier = Modifier.padding(end = 8.dp)) {
                         if (exporting) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White) else Icon(Icons.Rounded.Download, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Save PDF")
+                        Text(stringResource(R.string.save_pdf))
                     }
                 },
             )
@@ -316,6 +328,6 @@ fun CoverLetterPreviewScreen(
         }
     }
     exported?.let { file ->
-        ExportedDialog(file = file, onDismiss = { exported = null }, onViewSaved = { exported = null; onOpenSaved() }, message = "Your cover letter is ready.")
+        ExportedDialog(file = file, onDismiss = { exported = null }, onViewSaved = { exported = null; onOpenSaved() }, message = stringResource(R.string.cover_ready))
     }
 }

@@ -1,5 +1,6 @@
 package com.resume.builder.presentation.splash
 
+import androidx.compose.ui.res.stringResource
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -220,13 +221,13 @@ fun SplashScreen(onFinished: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                context.getString(R.string.app_name),
+                stringResource(R.string.app_name),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                "Build a job-winning resume in minutes",
+                stringResource(R.string.splash_tagline),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -240,7 +241,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "This action can contain ad",
+                stringResource(R.string.splash_ad_notice),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

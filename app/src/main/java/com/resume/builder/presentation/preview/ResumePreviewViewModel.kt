@@ -1,8 +1,11 @@
 package com.resume.builder.presentation.preview
 
 import android.graphics.Bitmap
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.resume.builder.R
+import com.resume.builder.presentation.components.UiText
 import com.resume.builder.domain.model.Resume
 import com.resume.builder.domain.model.ResumeStyle
 import com.resume.builder.domain.model.SavedFile
@@ -25,14 +28,14 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class CustomizeCategory(val label: String) {
-    TEMPLATE("Template"), COLORS("Colors"), FONT("Font"), SIZE("Size"), SPACING("Spacing"),
-    LAYOUT("Layout"), PHOTO("Photo"), CONTACT("Contact"), LANGUAGE("Language"),
+enum class CustomizeCategory(@StringRes val label: Int) {
+    TEMPLATE(R.string.customize_template), COLORS(R.string.customize_colors), FONT(R.string.customize_font), SIZE(R.string.customize_size), SPACING(R.string.customize_spacing),
+    LAYOUT(R.string.customize_layout), PHOTO(R.string.customize_photo), CONTACT(R.string.customize_contact), LANGUAGE(R.string.customize_language),
 }
 
 sealed interface PreviewEvent {
     data class Exported(val file: SavedFile) : PreviewEvent
-    data class Error(val message: String) : PreviewEvent
+    data class Error(val message: UiText) : PreviewEvent
 }
 
 @OptIn(FlowPreview::class)
@@ -81,7 +84,7 @@ class ResumePreviewViewModel(
                 _rendering.value = true
                 runCatching { exporter.previewResume(value, PAGE_WIDTH_PX) }
                     .onSuccess { _pages.value = it }
-                    .onFailure { _events.send(PreviewEvent.Error("Preview failed: ${it.message}")) }
+                    .onFailure { _events.send(PreviewEvent.Error(UiText.Res(R.string.error_preview_failed, it.message.orEmpty()))) }
                 _rendering.value = false
             }
         }
@@ -161,7 +164,7 @@ class ResumePreviewViewModel(
             if (dirty) persist()
             runCatching { exporter.exportResume(value) }
                 .onSuccess { _events.send(PreviewEvent.Exported(it)) }
-                .onFailure { _events.send(PreviewEvent.Error("Couldn't save PDF: ${it.message}")) }
+                .onFailure { _events.send(PreviewEvent.Error(UiText.Res(R.string.error_save_pdf, it.message.orEmpty()))) }
             _exporting.value = false
         }
     }
